@@ -9,28 +9,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { background-color: #080808; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(12, 12, 12, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .glass { background: rgba(12, 12, 12, 0.98); backdrop-filter: blur(25px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         
-        /* Estilo de las notas (Cues) */
         .cue-dot { 
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             border: 2px solid rgba(0,0,0,0.4);
-            box-shadow: 0 0 10px rgba(0,0,0,0.5);
         }
         .cue-dot:hover { transform: scale(1.5); cursor: pointer; z-index: 100; }
         .cue-dot.active-focus { 
-            transform: scale(2); 
-            box-shadow: 0 0 20px currentColor;
+            transform: scale(2.2); 
+            box-shadow: 0 0 25px currentColor;
             border: 2px solid white;
             z-index: 150;
         }
 
         #loginOverlay { background-color: #050505; }
-        
-        /* Animación de entrada de texto */
-        .text-focus { animation: slideIn 0.4s ease-out; }
+        .text-focus { animation: slideIn 0.3s ease-out; }
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); filter: blur(5px); }
+            from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
             to { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
     </style>
@@ -38,27 +34,33 @@
 <body class="h-screen flex flex-col overflow-hidden">
 
     <div id="loginOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="bg-zinc-950 p-10 rounded-3xl border border-zinc-900 w-full max-w-md text-center shadow-[0_0_50px_rgba(0,0,0,1)]">
+        <div class="bg-zinc-950 p-10 rounded-3xl border border-zinc-900 w-full max-w-md text-center shadow-2xl">
             <h1 class="text-[9px] tracking-[0.5em] text-zinc-600 mb-10 uppercase font-black">Control de Misión - Casa Ecuador</h1>
             <input type="password" id="passInput" placeholder="SISTEMA BLOQUEADO" class="w-full bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl mb-6 text-center text-white outline-none focus:border-blue-500 transition-all font-mono tracking-widest">
-            <button onclick="checkPass()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs hover:bg-blue-500 transition-all uppercase tracking-widest shadow-lg shadow-blue-900/20">Desbloquear</button>
-            <p id="errorMsg" class="text-red-500 text-[10px] mt-6 hidden uppercase tracking-[0.3em] font-bold">Acceso Denegado</p>
+            <button onclick="checkPass()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs hover:bg-blue-500 transition-all uppercase tracking-widest">Desbloquear</button>
         </div>
     </div>
 
-    <div class="glass h-1/3 flex flex-col justify-center items-center p-8 pt-12 text-center relative z-20">
+    <div class="glass h-1/3 flex flex-col justify-end items-center p-10 pt-16 pb-12 text-center relative z-20">
+        
+        <div class="absolute top-8 left-8 text-[9px] font-black tracking-[0.5em] text-white/70 uppercase select-none">
+            Casa Ecuador
+        </div>
+
         <div class="absolute top-8 right-8 flex items-center gap-4">
-            <span class="text-[9px] font-black text-zinc-600 tracking-widest uppercase">Filtro:</span>
-            <select id="filterSelect" class="bg-zinc-900 text-[10px] text-zinc-400 p-2 px-4 rounded-xl border border-zinc-800 outline-none focus:border-zinc-600 cursor-pointer font-bold">
+            <span class="text-[8px] font-black text-zinc-600 tracking-widest uppercase">Filtro Maestro:</span>
+            <select id="filterSelect" class="bg-zinc-900 text-[10px] text-zinc-300 p-2 px-4 rounded-xl border border-zinc-800 outline-none focus:border-zinc-600 cursor-pointer font-bold">
                 <option value="ALL">TODOS LOS DEPARTAMENTOS</option>
             </select>
         </div>
         
-        <div id="deptLabel" class="text-zinc-500 tracking-[0.4em] text-xs uppercase mb-3 font-black h-4">---</div>
-        <div id="activeCueDisplay" class="text-2xl md:text-4xl font-light text-zinc-800 transition-all duration-300 uppercase tracking-tighter leading-tight max-w-5xl text-focus">
+        <div id="deptLabel" class="text-white tracking-[0.5em] text-[11px] uppercase mb-4 font-black bg-zinc-800/50 px-4 py-1 rounded-md border border-white/5 transition-all">---</div>
+        
+        <div id="activeCueDisplay" class="text-xl md:text-3xl font-medium text-zinc-800 transition-all duration-300 uppercase tracking-tight leading-snug max-w-5xl text-focus">
             SISTEMA EN ESPERA
         </div>
-        <div id="nextCueDisplay" class="text-zinc-600 text-[9px] mt-8 font-mono uppercase tracking-[0.3em] bg-zinc-900/50 px-6 py-2 rounded-full border border-zinc-800/50">
+        
+        <div id="nextCueDisplay" class="text-zinc-600 text-[9px] mt-8 font-mono uppercase tracking-[0.3em] bg-zinc-900/30 px-6 py-2 rounded-full border border-zinc-800/50">
             Próximo: --:--
         </div>
     </div>
@@ -67,7 +69,7 @@
         
         <div class="bg-zinc-900/20 rounded-3xl p-8 border border-zinc-800/30">
             <div class="flex justify-between items-center mb-6 text-[10px] font-black tracking-[0.3em] text-zinc-700 uppercase">
-                <span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Master Reference</span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Master Reference (MP3)</span>
                 <span id="timeDisplay" class="font-mono text-blue-500 text-2xl">00:00</span>
             </div>
             <div id="waveform"></div>
@@ -88,19 +90,15 @@
         let wavesurfer;
         let duration = 0;
         let uniqueDepts = new Set();
-        let selectedCueId = null;
+        let focusedDepartment = null; 
 
         function checkPass() {
             const val = document.getElementById('passInput').value;
             if(val === PASS_CORRECTA) {
                 document.getElementById('loginOverlay').style.opacity = '0';
                 setTimeout(() => document.getElementById('loginOverlay').remove(), 500);
-            } else {
-                document.getElementById('errorMsg').classList.remove('hidden');
-                document.getElementById('passInput').value = "";
             }
         }
-        document.getElementById('passInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') checkPass(); });
 
         document.addEventListener('DOMContentLoaded', () => {
             wavesurfer = WaveSurfer.create({
@@ -111,8 +109,7 @@
                 height: 90,
                 barWidth: 2,
                 barGap: 4,
-                responsive: true,
-                normalize: true
+                responsive: true
             });
 
             wavesurfer.load(AUDIO_FILE);
@@ -121,18 +118,14 @@
                 loadData();
             });
 
-            wavesurfer.on('audioprocess', () => {
-                selectedCueId = null;
-                updateUI(wavesurfer.getCurrentTime());
-            });
-
-            wavesurfer.on('interaction', () => {
-                selectedCueId = null;
-                setTimeout(() => updateUI(wavesurfer.getCurrentTime()), 10);
-            });
+            wavesurfer.on('audioprocess', () => updateUI(wavesurfer.getCurrentTime()));
+            wavesurfer.on('interaction', () => setTimeout(() => updateUI(wavesurfer.getCurrentTime()), 10));
 
             document.getElementById('playBtn').addEventListener('click', () => wavesurfer.playPause());
-            document.getElementById('filterSelect').addEventListener('change', () => updateUI(wavesurfer.getCurrentTime()));
+            document.getElementById('filterSelect').addEventListener('change', () => {
+                focusedDepartment = null; 
+                updateUI(wavesurfer.getCurrentTime());
+            });
         });
 
         function loadData() {
@@ -144,11 +137,7 @@
                         .filter(row => row.Tiempo && row.Texto)
                         .map((row, index) => {
                             if(row.Departamento) uniqueDepts.add(row.Departamento.trim());
-                            return { 
-                                ...row, 
-                                id: `cue-${index}`,
-                                seconds: timeToSeconds(row.Tiempo) 
-                            };
+                            return { ...row, id: `cue-${index}`, seconds: timeToSeconds(row.Tiempo) };
                         });
                     setupFilters();
                     drawTimelines();
@@ -162,8 +151,7 @@
             Array.from(uniqueDepts).sort().forEach(dept => {
                 const row = document.createElement('div');
                 row.className = "relative h-16 bg-zinc-900/10 rounded-2xl border border-zinc-800/20 flex items-center group";
-                // Se aumentó el tamaño del texto de la disciplina en la línea de tiempo y su visibilidad
-                row.innerHTML = `<span class="absolute -top-3 left-6 text-[10px] uppercase font-black text-zinc-400 bg-[#080808] px-3 tracking-[0.2em] border border-zinc-800 rounded-lg">${dept}</span>`;
+                row.innerHTML = `<span class="absolute -top-3.5 left-6 text-[10px] uppercase font-black text-zinc-300 bg-[#080808] px-3 py-1 tracking-[0.2em] border border-zinc-800 rounded-lg shadow-xl">${dept}</span>`;
                 
                 const track = document.createElement('div');
                 track.className = "w-full h-full relative mx-8";
@@ -178,9 +166,9 @@
                     
                     dot.onclick = (e) => {
                         e.stopPropagation();
-                        selectedCueId = cue.id;
+                        focusedDepartment = cue.Departamento?.trim();
                         wavesurfer.setTime(cue.seconds);
-                        updateUI(cue.seconds, cue);
+                        updateUI(cue.seconds);
                     };
                     track.appendChild(dot);
                 });
@@ -189,18 +177,18 @@
             });
         }
 
-        function updateUI(time, forcedCue = null) {
+        function updateUI(time) {
             document.getElementById('timeDisplay').innerText = formatTime(time);
-            const filter = document.getElementById('filterSelect').value;
-            
-            let active;
-            if (forcedCue) {
-                active = forcedCue;
-            } else {
-                active = cues
-                    .filter(c => c.seconds <= time + 0.1 && (filter === 'ALL' || c.Departamento?.trim() === filter))
-                    .sort((a, b) => b.seconds - a.seconds)[0];
-            }
+            const filterVal = document.getElementById('filterSelect').value;
+            const activeDept = filterVal !== 'ALL' ? filterVal : focusedDepartment;
+
+            const filteredCues = activeDept 
+                ? cues.filter(c => c.Departamento?.trim() === activeDept)
+                : cues;
+
+            const active = filteredCues
+                .filter(c => c.seconds <= time + 0.1)
+                .sort((a, b) => b.seconds - a.seconds)[0];
 
             const display = document.getElementById('activeCueDisplay');
             const deptLabel = document.getElementById('deptLabel');
@@ -214,7 +202,7 @@
                 display.innerText = active.Texto;
                 display.style.color = active.Color || '#fff';
                 deptLabel.innerText = `[ ${active.Departamento || 'GENERAL'} ]`;
-                deptLabel.style.color = active.Color || '#a1a1aa'; // Color más claro para mejor lectura
+                deptLabel.style.borderColor = active.Color || 'transparent';
             } else {
                 display.innerText = "SISTEMA EN ESPERA";
                 display.style.color = "#18181b";
@@ -227,8 +215,8 @@
                 if (activeDot) activeDot.classList.add('active-focus');
             }
 
-            const next = cues
-                .filter(c => c.seconds > time && (filter === 'ALL' || c.Departamento?.trim() === filter))
+            const next = filteredCues
+                .filter(c => c.seconds > time)
                 .sort((a, b) => a.seconds - b.seconds)[0];
             
             document.getElementById('nextCueDisplay').innerText = next ? `PRÓXIMO: ${next.Tiempo} - ${next.Texto}` : "FINAL DEL TRACK";
