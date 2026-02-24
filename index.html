@@ -9,136 +9,123 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         body { 
-            background-color: #050505;
-            color: #e2e8f0; 
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif;
+            background-color: #030303; 
+            color: #f5f5f7; 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif;
             overflow: hidden; 
-            letter-spacing: -0.01em;
+            letter-spacing: -0.015em;
         }
         
         #loginOverlay { 
-            background-color: rgba(5, 5, 5, 0.95);
-            backdrop-filter: blur(40px);
-            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            background-color: #030303;
+            backdrop-filter: blur(50px);
             z-index: 9999;
-        }
-        .login-card {
-            background: rgba(25, 25, 25, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
         }
 
         .fixed-console { 
-            background: rgba(12, 12, 12, 0.85);
-            backdrop-filter: blur(60px) saturate(140%);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            background: rgba(10, 10, 10, 0.8);
+            backdrop-filter: blur(60px) saturate(160%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             z-index: 100;
         }
 
+        /* Área de Monitor con espacio protegido */
         .monitor-safe-zone {
-            height: 200px;
+            height: 240px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            position: relative;
+        }
+
+        /* Efecto de cristal para los rieles de departamento */
+        .dept-channel {
+            background: rgba(255, 255, 255, 0.02);
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .dept-channel:hover {
+            background: rgba(255, 255, 255, 0.04);
+            border-color: rgba(255, 255, 255, 0.08);
         }
 
         .cue-dot { 
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            border: 2px solid rgba(0,0,0,0.6);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); 
+            border: 1.5px solid rgba(0,0,0,0.4);
+            cursor: pointer;
         }
         .cue-dot.active-focus { 
             transform: scale(2.4); 
-            box-shadow: 0 0 30px currentColor;
+            box-shadow: 0 0 25px currentColor;
             border: 2px solid white;
-            z-index: 150;
+            z-index: 50;
         }
 
-        .text-focus { animation: appleSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes appleSlideIn {
-            from { opacity: 0; transform: translateY(10px) scale(0.98); filter: blur(4px); }
-            to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        .text-focus { animation: appleEntrance 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes appleEntrance {
+            from { opacity: 0; transform: translateY(15px); filter: blur(10px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
 
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
-
-        .apple-input {
-            background: rgba(255, 255, 255, 0.04);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.3s ease;
-        }
-        .apple-input:focus {
-            background: rgba(255, 255, 255, 0.06);
-            border-color: rgba(59, 130, 246, 0.5);
-            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
-        }
         .apple-button {
-            background: linear-gradient(180deg, #ffffff 0%, #eeeeee 100%);
-            color: black;
-            border: none;
+            background: rgba(255, 255, 255, 0.95);
+            color: #000;
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
+        .apple-button:hover { background: #fff; transform: translateY(-1px); }
+        .apple-button:active { transform: translateY(0) scale(0.97); }
 
-        .minimal-select {
-            appearance: none;
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-            background-position: right 0.6rem center;
-            background-repeat: no-repeat;
-            background-size: 1.2em 1.2em;
-        }
+        .custom-scroll::-webkit-scrollbar { width: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
 <body class="h-screen flex flex-col">
 
     <div id="loginOverlay" class="fixed inset-0 flex items-center justify-center p-4">
-        <div class="login-card p-12 rounded-[2.5rem] w-full max-w-sm text-center">
-            <div class="text-[10px] tracking-[0.6em] text-zinc-500 mb-12 uppercase font-bold select-none">
-                Casa Ecuador <span class="text-blue-500">.</span> Pro
-            </div>
-            <input type="password" id="passInput" placeholder="Credencial de Acceso" autofocus
-                   class="apple-input w-full p-4 rounded-2xl mb-6 text-center text-white outline-none font-medium tracking-wider text-xs placeholder:text-zinc-600">
-            <button onclick="checkPass()" class="apple-button w-full py-4 rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] transition-all active:scale-95">
-                Desbloquear
-            </button>
-            <p id="loginError" class="text-red-500/80 text-[9px] mt-6 uppercase tracking-widest hidden font-medium">Clave Incorrecta</p>
+        <div class="bg-[#111] p-12 rounded-[2.5rem] w-full max-w-sm text-center border border-white/5 shadow-2xl">
+            <div class="text-[10px] tracking-[0.6em] text-zinc-500 mb-10 uppercase font-black">Casa Ecuador . Producción</div>
+            <input type="password" id="passInput" placeholder="Clave de Sistema" autofocus
+                   class="w-full bg-white/5 border border-white/10 p-4 rounded-2xl mb-6 text-center text-white outline-none focus:border-blue-500/50 transition-all font-medium text-sm">
+            <button onclick="checkPass()" class="apple-button w-full py-4 rounded-2xl font-bold text-[11px] uppercase tracking-[0.3em] transition-all">Acceder</button>
+            <p id="loginError" class="text-red-500 text-[9px] mt-6 hidden uppercase tracking-widest font-bold">Error de Acceso</p>
         </div>
     </div>
 
     <header class="fixed-console shrink-0">
         <div class="flex justify-between items-center px-10 py-5">
-            <div class="text-[10px] font-bold tracking-[0.7em] text-white/40 uppercase select-none flex items-center gap-2">
-                Casa Ecuador
-            </div>
+            <div class="text-[10px] font-bold tracking-[0.7em] text-white/40 uppercase select-none">Casa Ecuador</div>
             <div class="relative">
-                <select id="filterSelect" class="minimal-select bg-white/5 text-[9px] text-zinc-400 py-2.5 pl-5 pr-10 rounded-xl border border-white/5 outline-none cursor-pointer font-bold uppercase transition-all hover:bg-white/10">
-                    <option value="ALL">Filtro: Todo el Sistema</option>
+                <select id="filterSelect" class="bg-white/5 text-[9px] text-zinc-400 py-2.5 px-6 rounded-xl border border-white/5 outline-none cursor-pointer font-bold uppercase transition-all hover:bg-white/10">
+                    <option value="ALL">Canal: Todos</option>
                 </select>
             </div>
         </div>
 
         <div class="monitor-safe-zone px-20">
-            <div id="deptLabel" class="tracking-[0.4em] text-[9px] uppercase mb-4 font-black px-4 py-1.5 rounded-lg border transition-all flex items-center gap-2 bg-zinc-900/40 border-white/5 text-zinc-600">
-                ---
+            <div id="deptLabel" class="tracking-[0.5em] text-[10px] uppercase mb-5 font-black px-4 py-1 rounded-md border border-white/5 transition-all">---</div>
+            
+            <div id="activeCueDisplay" class="font-medium transition-all duration-500 uppercase tracking-tight leading-tight max-w-6xl text-center text-focus" style="font-size: 2.2rem;">
+                SISTEMA EN ESPERA
             </div>
-            <div id="activeCueDisplay" class="text-xl md:text-2xl lg:text-3xl font-medium transition-all duration-500 uppercase tracking-wide leading-relaxed max-w-6xl overflow-y-auto max-h-[120px] px-4 custom-scroll text-center text-zinc-800">
-                Consola en Espera
-            </div>
-            <div id="nextCueDisplay" class="text-zinc-700 text-[9px] mt-6 font-medium uppercase tracking-[0.25em]">
+            
+            <div id="nextCueDisplay" class="text-zinc-600 text-[9px] mt-8 font-medium uppercase tracking-[0.3em] opacity-60">
                 Próximo: --:--
             </div>
         </div>
 
-        <div class="pb-10 px-10">
-            <div class="max-w-5xl mx-auto">
-                <div class="flex justify-between items-center mb-4 text-[9px] font-bold tracking-[0.3em] text-zinc-700 uppercase">
-                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse shadow-[0_0_12px_rgba(37,99,235,0.6)]"></span> Master Track</span>
-                    <span id="timeDisplay" class="font-mono text-blue-500 text-lg font-medium">00:00</span>
+        <div class="px-10 pb-8 pt-4">
+            <div class="max-w-6xl mx-auto">
+                <div class="flex justify-between items-center mb-4 text-[9px] font-bold tracking-[0.4em] text-zinc-700 uppercase">
+                    <span>Reference Master</span>
+                    <span id="timeDisplay" class="font-mono text-blue-500 text-xl font-medium">00:00</span>
                 </div>
                 
-                <div id="waveform" class="mb-10 opacity-85 hover:opacity-100 transition-opacity mix-blend-screen shadow-inner bg-black/20 rounded-lg p-1"></div>
+                <div id="waveform" class="mb-8 opacity-90 transition-opacity rounded-lg overflow-hidden"></div>
                 
                 <div class="flex justify-center">
-                    <button id="playBtn" class="apple-button px-24 py-4 rounded-full text-[11px] font-bold transition-all active:scale-95 uppercase tracking-[0.2em] shadow-lg">
+                    <button id="playBtn" class="apple-button px-24 py-4 rounded-full text-[11px] font-bold transition-all uppercase tracking-[0.2em] shadow-xl">
                         Play / Pausa
                     </button>
                 </div>
@@ -146,8 +133,8 @@
         </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-12 pt-16 bg-[#050505] custom-scroll">
-        <div id="timelinesContainer" class="space-y-5 pb-56 max-w-6xl mx-auto"></div>
+    <main class="flex-1 overflow-y-auto p-10 pt-16 bg-[#030303] custom-scroll">
+        <div id="timelinesContainer" class="space-y-6 pb-48 max-w-6xl mx-auto"></div>
     </main>
 
     <script>
@@ -162,49 +149,37 @@
         let focusedDepartment = null; 
         let lastActiveId = null;
 
-        document.getElementById('passInput').addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') checkPass();
-        });
+        document.getElementById('passInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') checkPass(); });
 
         function checkPass() {
             const val = document.getElementById('passInput').value;
-            const errorMsg = document.getElementById('loginError');
             if(val === PASS_CORRECTA) {
                 document.getElementById('loginOverlay').style.opacity = '0';
                 setTimeout(() => document.getElementById('loginOverlay').remove(), 600);
             } else {
-                errorMsg.classList.remove('hidden');
+                document.getElementById('loginError').classList.remove('hidden');
                 document.getElementById('passInput').value = "";
-                setTimeout(() => errorMsg.classList.add('hidden'), 2500);
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             wavesurfer = WaveSurfer.create({
                 container: '#waveform',
-                waveColor: 'rgba(255, 255, 255, 0.4)', // WAVEFORM MÁS VISIBLE
-                progressColor: 'rgba(59, 130, 246, 0.95)', 
+                waveColor: 'rgba(255, 255, 255, 0.2)', // ONDA FUTURA (SUTIL)
+                progressColor: '#3b82f6', // ONDA PASADA (VIBRANTE)
                 cursorColor: '#ffffff',
-                height: 50, 
+                height: 40,
                 barWidth: 2,
                 barGap: 3,
-                barRadius: 2,
+                barRadius: 4,
                 responsive: true,
                 normalize: true
             });
 
             wavesurfer.load(AUDIO_FILE);
-            wavesurfer.on('ready', () => {
-                duration = wavesurfer.getDuration();
-                loadData();
-            });
-
+            wavesurfer.on('ready', () => { duration = wavesurfer.getDuration(); loadData(); });
             wavesurfer.on('timeupdate', () => updateUI(wavesurfer.getCurrentTime()));
-            wavesurfer.on('interaction', () => {
-                lastActiveId = null;
-                updateUI(wavesurfer.getCurrentTime());
-            });
-
+            wavesurfer.on('interaction', () => { lastActiveId = null; updateUI(wavesurfer.getCurrentTime()); });
             document.getElementById('playBtn').addEventListener('click', () => wavesurfer.playPause());
             document.getElementById('filterSelect').addEventListener('change', (e) => {
                 focusedDepartment = e.target.value === 'ALL' ? null : e.target.value;
@@ -236,25 +211,29 @@
             container.innerHTML = ''; 
             Array.from(uniqueDepts).sort().forEach(dept => {
                 const row = document.createElement('div');
-                row.className = "relative h-14 bg-zinc-900/30 rounded-2xl border border-white/5 flex items-center px-6 group transition-all hover:bg-zinc-900/50";
+                row.className = "dept-channel relative h-16 rounded-2xl flex items-center overflow-hidden";
                 
-                row.innerHTML = `<div class="w-32 text-[9px] uppercase font-black text-zinc-600 tracking-[0.2em] text-right pr-6 select-none group-hover:text-zinc-400 transition-colors border-r border-white/10 h-full flex items-center justify-end">${dept}</div>`;
+                row.innerHTML = `
+                    <div class="w-36 h-full flex items-center justify-end pr-8 border-r border-white/5 bg-white/[0.01]">
+                        <span class="text-[9px] uppercase font-black text-zinc-500 tracking-[0.2em] select-none">${dept}</span>
+                    </div>
+                `;
                 
                 const trackWrapper = document.createElement('div');
-                trackWrapper.className = "flex-1 h-full relative flex items-center ml-6";
+                trackWrapper.className = "flex-1 h-full relative mx-10 flex items-center";
                 
                 const trackLine = document.createElement('div');
-                trackLine.className = "absolute w-full h-[1.5px] bg-white/10 rounded-full";
+                trackLine.className = "absolute w-full h-[1px] bg-white/5";
                 trackWrapper.appendChild(trackLine);
                 
                 cues.filter(c => c.Departamento === dept).forEach(cue => {
                     const dot = document.createElement('div');
                     dot.id = cue.id;
-                    dot.className = "cue-dot absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full";
-                    const colorBase = cue.Color || '#555';
+                    dot.className = "cue-dot absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full shadow-lg";
+                    const color = cue.Color || '#444';
                     dot.style.left = `${(cue.seconds / duration) * 100}%`;
-                    dot.style.backgroundColor = colorBase;
-                    dot.style.color = colorBase;
+                    dot.style.backgroundColor = color;
+                    dot.style.color = color;
                     
                     dot.onclick = (e) => {
                         e.stopPropagation();
@@ -276,10 +255,7 @@
             const activeDept = currentFilter !== 'ALL' ? currentFilter : focusedDepartment;
             const pool = activeDept ? cues.filter(c => c.Departamento === activeDept) : cues;
 
-            const active = [...pool]
-                .filter(c => c.seconds <= time + 0.05)
-                .sort((a, b) => b.seconds - a.seconds)[0];
-
+            const active = [...pool].filter(c => c.seconds <= time + 0.05).sort((a, b) => b.seconds - a.seconds)[0];
             const display = document.getElementById('activeCueDisplay');
             const deptLabel = document.getElementById('deptLabel');
 
@@ -288,26 +264,32 @@
                     lastActiveId = active.id;
                     display.innerText = active.Texto;
                     
+                    // AJUSTE DINÁMICO DE FUENTE
+                    const len = active.Texto.length;
+                    if (len > 150) display.style.fontSize = "1.2rem";
+                    else if (len > 80) display.style.fontSize = "1.6rem";
+                    else display.style.fontSize = "2.2rem";
+
+                    // SINCRONIZACIÓN DE COLOR
                     const color = active.Color || '#fff';
                     display.style.color = color;
-
                     deptLabel.innerText = active.Departamento;
-                    deptLabel.style.backgroundColor = `${color}15`; 
                     deptLabel.style.color = color;
                     deptLabel.style.borderColor = `${color}40`;
-                    
+                    deptLabel.style.background = `${color}10`;
+
                     display.classList.remove('text-focus');
                     void display.offsetWidth;
                     display.classList.add('text-focus');
                 }
             } else if (!active && lastActiveId !== null) {
                 lastActiveId = null;
-                display.innerText = "Consola en Espera";
+                display.innerText = "CONSOLA EN ESPERA";
                 display.style.color = "#27272a";
+                display.style.fontSize = "2.2rem";
                 deptLabel.innerText = "---";
-                deptLabel.style.backgroundColor = "transparent";
                 deptLabel.style.color = "#52525b";
-                deptLabel.style.borderColor = "rgba(255, 255, 255, 0.05)";
+                deptLabel.style.background = "transparent";
             }
 
             document.querySelectorAll('.cue-dot').forEach(d => d.classList.remove('active-focus'));
@@ -317,14 +299,14 @@
             }
 
             const next = pool.filter(c => c.seconds > time).sort((a, b) => a.seconds - b.seconds)[0];
-            document.getElementById('nextCueDisplay').innerText = next ? `Próximo: ${formatTime(next.seconds)} - ${next.Texto.substring(0, 45)}...` : "Fin del Track";
+            document.getElementById('nextCueDisplay').innerText = next ? `PRÓXIMO: ${formatTime(next.seconds)} - ${next.Texto.substring(0, 40)}...` : "FIN DEL TRACK";
         }
 
         function setupFilters() {
             const select = document.getElementById('filterSelect');
             Array.from(uniqueDepts).sort().forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = d; opt.innerText = `Filtro: ${d}`;
+                opt.value = d; opt.innerText = `Canal: ${d}`;
                 select.appendChild(opt);
             });
         }
