@@ -24,9 +24,11 @@
         }
 
         #loginOverlay { background-color: #050505; }
-        .text-focus { animation: slideIn 0.3s ease-out; }
+        
+        /* Animación de entrada: solo se activa cuando cambia el ID de la nota */
+        .text-focus { animation: slideIn 0.4s ease-out forwards; }
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(8px); filter: blur(4px); }
+            from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
             to { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
     </style>
@@ -54,9 +56,9 @@
             </select>
         </div>
         
-        <div id="deptLabel" class="text-zinc-400 tracking-[0.5em] text-[12px] uppercase mb-4 font-black bg-zinc-900/80 px-5 py-1.5 rounded-lg border border-white/10 shadow-lg">---</div>
+        <div id="deptLabel" class="text-zinc-400 tracking-[0.5em] text-[12px] uppercase mb-4 font-black bg-zinc-900/80 px-5 py-1.5 rounded-lg border border-white/10 shadow-lg transition-colors">---</div>
         
-        <div id="activeCueDisplay" class="text-xl md:text-3xl font-medium text-zinc-800 transition-all duration-300 uppercase tracking-tight leading-snug max-w-5xl text-focus min-h-[1.5em]">
+        <div id="activeCueDisplay" class="text-xl md:text-3xl font-medium text-zinc-800 transition-all duration-300 uppercase tracking-tight leading-snug max-w-5xl min-h-[1.5em]">
             SISTEMA EN ESPERA
         </div>
         
@@ -66,7 +68,6 @@
     </div>
 
     <div class="flex-1 overflow-y-auto p-8 space-y-10 bg-[#080808]">
-        
         <div class="bg-zinc-900/20 rounded-3xl p-8 border border-zinc-800/30">
             <div class="flex justify-between items-center mb-6 text-[10px] font-black tracking-[0.3em] text-zinc-700 uppercase">
                 <span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Master Reference</span>
@@ -91,6 +92,7 @@
         let duration = 0;
         let uniqueDepts = new Set();
         let focusedDepartment = null; 
+        let lastActiveCueId = null; // Variable clave para evitar que el texto desaparezca en play
 
         function checkPass() {
             const val = document.getElementById('passInput').value;
@@ -118,13 +120,17 @@
                 loadData();
             });
 
-            // Sincronización robusta durante el play
+            // Usamos 'timeupdate' para que la UI se actualice fluidamente en Play
             wavesurfer.on('timeupdate', () => updateUI(wavesurfer.getCurrentTime()));
-            wavesurfer.on('interaction', () => setTimeout(() => updateUI(wavesurfer.getCurrentTime()), 10));
+            wavesurfer.on('interaction', () => {
+                lastActiveCueId = null; // Reset para forzar actualización al saltar manualmente
+                updateUI(wavesurfer.getCurrentTime());
+            });
 
             document.getElementById('playBtn').addEventListener('click', () => wavesurfer.playPause());
             document.getElementById('filterSelect').addEventListener('change', (e) => {
                 focusedDepartment = e.target.value === 'ALL' ? null : e.target.value;
+                lastActiveCueId = null; 
                 updateUI(wavesurfer.getCurrentTime());
             });
         });
@@ -169,8 +175,7 @@
                     dot.onclick = (e) => {
                         e.stopPropagation();
                         focusedDepartment = cue.Departamento;
-                        // Sincronizar el select visualmente si cambia el foco
-                        document.getElementById('filterSelect').value = 'ALL'; 
+                        lastActiveCueId = null; 
                         wavesurfer.setTime(cue.seconds);
                         updateUI(cue.seconds);
                     };
@@ -184,12 +189,10 @@
         function updateUI(time) {
             document.getElementById('timeDisplay').innerText = formatTime(time);
             
-            // Lógica de filtrado dinámico
             const filteredCues = focusedDepartment 
                 ? cues.filter(c => c.Departamento === focusedDepartment)
                 : cues;
 
-            // Encontrar la última nota que ya pasó el cabezal de reproducción
             const active = [...filteredCues]
                 .filter(c => c.seconds <= time + 0.05)
                 .sort((a, b) => b.seconds - a.seconds)[0];
@@ -198,29 +201,35 @@
             const deptLabel = document.getElementById('deptLabel');
 
             if (active) { 
-                if (display.innerText !== active.Texto) {
+                // CRÍTICO: Solo actualizamos el DOM y disparamos la animación si la nota es NUEVA
+                if (active.id !== lastActiveCueId) {
+                    lastActiveCueId = active.id;
+                    
+                    display.innerText = active.Texto;
+                    display.style.color = active.Color || '#fff';
+                    deptLabel.innerText = active.Departamento;
+                    
+                    // Reiniciar animación de entrada
                     display.classList.remove('text-focus');
-                    void display.offsetWidth; // Reset animación
+                    void display.offsetWidth; 
                     display.classList.add('text-focus');
                 }
-                display.innerText = active.Texto;
-                display.style.color = active.Color || '#fff';
-                deptLabel.innerText = active.Departamento;
-                deptLabel.style.display = 'inline-block';
             } else {
-                display.innerText = "SISTEMA EN ESPERA";
-                display.style.color = "#27272a";
-                deptLabel.innerText = "---";
+                if (lastActiveCueId !== null) {
+                    lastActiveCueId = null;
+                    display.innerText = "SISTEMA EN ESPERA";
+                    display.style.color = "#27272a";
+                    deptLabel.innerText = "---";
+                }
             }
 
-            // Resaltado visual en el timeline
+            // Actualizar puntos visuales
             document.querySelectorAll('.cue-dot').forEach(d => d.classList.remove('active-focus'));
             if (active) {
                 const activeDot = document.getElementById(active.id);
                 if (activeDot) activeDot.classList.add('active-focus');
             }
 
-            // Próxima nota (según el filtro actual)
             const next = filteredCues
                 .filter(c => c.seconds > time)
                 .sort((a, b) => a.seconds - b.seconds)[0];
