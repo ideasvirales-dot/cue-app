@@ -8,14 +8,18 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #080808; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(12, 12, 12, 0.98); backdrop-filter: blur(30px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+        body { background-color: #080808; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow: hidden; }
+        .glass-header { 
+            background: rgba(12, 12, 12, 0.98); 
+            backdrop-filter: blur(30px); 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 50;
+        }
         
         .cue-dot { 
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             border: 2px solid rgba(0,0,0,0.4);
         }
-        .cue-dot:hover { transform: scale(1.5); cursor: pointer; z-index: 100; }
         .cue-dot.active-focus { 
             transform: scale(2.2); 
             box-shadow: 0 0 25px currentColor;
@@ -23,67 +27,63 @@
             z-index: 150;
         }
 
-        #loginOverlay { background-color: #050505; }
+        /* Animación suave para cambio de notas */
         .text-focus { animation: slideIn 0.4s ease-out forwards; }
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(15px); filter: blur(5px); }
+            from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
             to { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
 
-        /* Scrollbar personalizado para textos muy largos */
-        #activeCueDisplay::-webkit-scrollbar { width: 4px; }
-        #activeCueDisplay::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        /* Scrollbar sutil para el contenido */
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body class="h-screen flex flex-col">
 
-    <div id="loginOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="bg-zinc-950 p-10 rounded-3xl border border-zinc-900 w-full max-w-md text-center shadow-2xl">
-            <h1 class="text-[9px] tracking-[0.5em] text-zinc-600 mb-10 uppercase font-black">Control de Misión - Casa Ecuador</h1>
-            <input type="password" id="passInput" placeholder="SISTEMA BLOQUEADO" class="w-full bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl mb-6 text-center text-white outline-none focus:border-blue-500 transition-all font-mono tracking-widest">
-            <button onclick="checkPass()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs hover:bg-blue-500 transition-all uppercase tracking-widest">Desbloquear</button>
-        </div>
-    </div>
-
-    <div class="glass min-h-[40vh] flex flex-col justify-center items-center p-12 pt-20 pb-12 text-center relative z-20">
+    <header class="glass-header flex flex-col shrink-0">
         
-        <div class="absolute top-8 left-8 text-[10px] font-black tracking-[0.6em] text-white/70 uppercase select-none">
-            Casa Ecuador
-        </div>
-
-        <div class="absolute top-8 right-8 flex items-center gap-4">
-            <span class="text-[8px] font-black text-zinc-600 tracking-widest uppercase">Filtro Maestro:</span>
-            <select id="filterSelect" class="bg-zinc-900 text-[10px] text-zinc-300 p-2 px-4 rounded-xl border border-zinc-800 outline-none focus:border-zinc-600 cursor-pointer font-bold uppercase">
-                <option value="ALL">TODOS LOS DEPARTAMENTOS</option>
-            </select>
-        </div>
-        
-        <div id="deptLabel" class="text-white tracking-[0.6em] text-[11px] uppercase mb-6 font-black bg-zinc-800/80 px-5 py-2 rounded-lg border border-white/10 shadow-xl">---</div>
-        
-        <div id="activeCueDisplay" class="text-xl md:text-2xl lg:text-3xl font-medium text-zinc-800 transition-all duration-500 uppercase tracking-tight leading-relaxed max-w-6xl overflow-y-auto max-h-[25vh] px-4">
-            SISTEMA EN ESPERA
-        </div>
-        
-        <div id="nextCueDisplay" class="text-zinc-600 text-[9px] mt-10 font-mono uppercase tracking-[0.3em] bg-zinc-900/30 px-6 py-2 rounded-full border border-zinc-800/50">
-            Próximo: --:--
-        </div>
-    </div>
-
-    <div class="flex-1 overflow-y-auto p-8 space-y-10 bg-[#080808]">
-        
-        <div class="bg-zinc-900/20 rounded-3xl p-8 border border-zinc-800/30">
-            <div class="flex justify-between items-center mb-6 text-[10px] font-black tracking-[0.3em] text-zinc-700 uppercase">
-                <span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Master Reference (MP3)</span>
-                <span id="timeDisplay" class="font-mono text-blue-500 text-2xl">00:00</span>
+        <div class="flex justify-between items-center px-8 py-4 border-b border-white/5">
+            <div class="text-[10px] font-black tracking-[0.6em] text-white/70 uppercase select-none">
+                Casa Ecuador
             </div>
-            <div id="waveform"></div>
-            <div class="flex justify-center mt-10">
-                <button id="playBtn" class="bg-zinc-100 text-black px-12 py-4 rounded-2xl text-[11px] font-black hover:bg-white uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl">PLAY / PAUSA</button>
+            <div class="flex items-center gap-4">
+                <span class="text-[8px] font-black text-zinc-600 tracking-widest uppercase">Filtro Maestro:</span>
+                <select id="filterSelect" class="bg-zinc-900 text-[10px] text-zinc-300 p-2 px-4 rounded-xl border border-zinc-800 outline-none cursor-pointer font-bold uppercase">
+                    <option value="ALL">TODOS LOS DEPARTAMENTOS</option>
+                </select>
             </div>
         </div>
 
+        <div class="flex flex-col items-center p-6 text-center border-b border-white/5">
+            <div id="deptLabel" class="text-white tracking-[0.6em] text-[10px] uppercase mb-3 font-black bg-zinc-800/80 px-4 py-1.5 rounded-lg border border-white/10 shadow-lg">---</div>
+            
+            <div id="activeCueDisplay" class="text-lg md:text-2xl font-medium text-zinc-800 transition-all duration-500 uppercase tracking-tight leading-snug max-w-5xl px-4 min-h-[3.5rem] flex items-center justify-center">
+                SISTEMA EN ESPERA
+            </div>
+            
+            <div id="nextCueDisplay" class="text-zinc-600 text-[9px] mt-4 font-mono uppercase tracking-[0.3em] bg-zinc-900/30 px-6 py-1.5 rounded-full border border-zinc-800/50">
+                Próximo: --:--
+            </div>
+        </div>
+
+        <div class="bg-zinc-900/10 p-4 px-8 flex items-center gap-8 border-b border-white/5">
+            <div class="flex-1">
+                <div class="flex justify-between items-center mb-2 text-[9px] font-black tracking-[0.3em] text-zinc-700 uppercase">
+                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span> Master Track</span>
+                    <span id="timeDisplay" class="font-mono text-blue-500 text-xl">00:00</span>
+                </div>
+                <div id="waveform"></div>
+            </div>
+            <button id="playBtn" class="shrink-0 bg-white text-black px-8 py-3 rounded-2xl text-[10px] font-black hover:bg-zinc-200 transition-all active:scale-95 shadow-xl uppercase tracking-widest">
+                Play / Pausa
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 overflow-y-auto p-8 pt-12 space-y-12 bg-[#080808] custom-scroll">
         <div id="timelinesContainer" class="space-y-12 pb-32"></div>
-    </div>
+    </main>
 
     <script>
         const GOOGLE_SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRdJ2DaW8hsb4ym2GrsDSYS87oXbT910zIQZuXkA0Cnh_SIqKtw-ssB2-hTowVoeybOO-BYdxUxx5nm/pub?output=csv"; 
@@ -97,23 +97,15 @@
         let focusedDepartment = null; 
         let lastActiveId = null;
 
-        function checkPass() {
-            const val = document.getElementById('passInput').value;
-            if(val === PASS_CORRECTA) {
-                document.getElementById('loginOverlay').style.opacity = '0';
-                setTimeout(() => document.getElementById('loginOverlay').remove(), 500);
-            }
-        }
-
         document.addEventListener('DOMContentLoaded', () => {
             wavesurfer = WaveSurfer.create({
                 container: '#waveform',
                 waveColor: '#1a1a1a',
                 progressColor: '#3b82f6',
                 cursorColor: '#ffffff',
-                height: 90,
+                height: 60, // Altura reducida
                 barWidth: 2,
-                barGap: 4,
+                barGap: 3,
                 responsive: true
             });
 
@@ -123,10 +115,9 @@
                 loadData();
             });
 
-            // ESCUCHADOR CRÍTICO: 'timeupdate' asegura que se lea en PLAY
             wavesurfer.on('timeupdate', () => updateUI(wavesurfer.getCurrentTime()));
             wavesurfer.on('interaction', () => {
-                lastActiveId = null; // Reset para forzar renderizado al saltar
+                lastActiveId = null;
                 updateUI(wavesurfer.getCurrentTime());
             });
 
@@ -161,8 +152,8 @@
             container.innerHTML = ''; 
             Array.from(uniqueDepts).sort().forEach(dept => {
                 const row = document.createElement('div');
-                row.className = "relative h-16 bg-zinc-900/10 rounded-2xl border border-zinc-800/20 flex items-center group";
-                row.innerHTML = `<span class="absolute -top-4 left-6 text-[11px] uppercase font-black text-zinc-300 bg-[#080808] px-4 py-1 tracking-[0.2em] border border-zinc-800 rounded-lg shadow-xl">${dept}</span>`;
+                row.className = "relative h-16 bg-zinc-900/10 rounded-2xl border border-zinc-800/20 flex items-center";
+                row.innerHTML = `<span class="absolute -top-4 left-6 text-[10px] uppercase font-black text-zinc-400 bg-[#080808] px-4 py-1 tracking-[0.2em] border border-zinc-800 rounded-lg shadow-xl">${dept}</span>`;
                 
                 const track = document.createElement('div');
                 track.className = "w-full h-full relative mx-10";
@@ -191,14 +182,10 @@
 
         function updateUI(time) {
             document.getElementById('timeDisplay').innerText = formatTime(time);
-            
-            // Lógica de Filtrado de Departamento
             const currentFilter = document.getElementById('filterSelect').value;
             const activeDept = currentFilter !== 'ALL' ? currentFilter : focusedDepartment;
-
             const pool = activeDept ? cues.filter(c => c.Departamento === activeDept) : cues;
 
-            // Buscamos la nota activa (la última que ya pasó el tiempo actual)
             const active = [...pool]
                 .filter(c => c.seconds <= time + 0.05)
                 .sort((a, b) => b.seconds - a.seconds)[0];
@@ -207,7 +194,6 @@
             const deptLabel = document.getElementById('deptLabel');
 
             if (active) { 
-                // Evitamos refrescos innecesarios que rompen la animación y visibilidad en Play
                 if (active.id !== lastActiveId) {
                     lastActiveId = active.id;
                     display.innerText = active.Texto;
@@ -224,17 +210,14 @@
                 display.innerText = "SISTEMA EN ESPERA";
                 display.style.color = "#27272a";
                 deptLabel.innerText = "---";
-                deptLabel.style.color = "#52525b";
             }
 
-            // Resaltado de puntos
             document.querySelectorAll('.cue-dot').forEach(d => d.classList.remove('active-focus'));
             if (active) {
                 const activeDot = document.getElementById(active.id);
                 if (activeDot) activeDot.classList.add('active-focus');
             }
 
-            // Próximo Cue
             const next = pool.filter(c => c.seconds > time).sort((a, b) => a.seconds - b.seconds)[0];
             document.getElementById('nextCueDisplay').innerText = next ? `PRÓXIMO: ${formatTime(next.seconds)} - ${next.Texto}` : "FINAL DEL TRACK";
         }
