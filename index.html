@@ -8,7 +8,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #080808; color: #e2e8f0; font-family: 'Inter', sans-serif; }
+        body { background-color: #080808; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow: hidden; }
         .glass { background: rgba(12, 12, 12, 0.98); backdrop-filter: blur(25px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         
         .cue-dot { 
@@ -31,7 +31,7 @@
         }
     </style>
 </head>
-<body class="h-screen flex flex-col overflow-hidden">
+<body class="h-screen flex flex-col">
 
     <div id="loginOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div class="bg-zinc-950 p-10 rounded-3xl border border-zinc-900 w-full max-w-md text-center shadow-2xl">
@@ -43,20 +43,20 @@
 
     <div class="glass h-1/3 flex flex-col justify-end items-center p-10 pt-16 pb-12 text-center relative z-20">
         
-        <div class="absolute top-8 left-8 text-[9px] font-black tracking-[0.5em] text-white/70 uppercase select-none">
+        <div class="absolute top-8 left-8 text-[10px] font-black tracking-[0.5em] text-white/70 uppercase select-none">
             Casa Ecuador
         </div>
 
         <div class="absolute top-8 right-8 flex items-center gap-4">
             <span class="text-[8px] font-black text-zinc-600 tracking-widest uppercase">Filtro Maestro:</span>
-            <select id="filterSelect" class="bg-zinc-900 text-[10px] text-zinc-300 p-2 px-4 rounded-xl border border-zinc-800 outline-none focus:border-zinc-600 cursor-pointer font-bold">
+            <select id="filterSelect" class="bg-zinc-900 text-[10px] text-zinc-300 p-2 px-4 rounded-xl border border-zinc-800 outline-none focus:border-zinc-600 cursor-pointer font-bold uppercase">
                 <option value="ALL">TODOS LOS DEPARTAMENTOS</option>
             </select>
         </div>
         
-        <div id="deptLabel" class="text-white tracking-[0.5em] text-[11px] uppercase mb-4 font-black bg-zinc-800/50 px-4 py-1 rounded-md border border-white/5 transition-all">---</div>
+        <div id="deptLabel" class="text-zinc-400 tracking-[0.5em] text-[12px] uppercase mb-4 font-black bg-zinc-900/80 px-5 py-1.5 rounded-lg border border-white/10 shadow-lg">---</div>
         
-        <div id="activeCueDisplay" class="text-xl md:text-3xl font-medium text-zinc-800 transition-all duration-300 uppercase tracking-tight leading-snug max-w-5xl text-focus">
+        <div id="activeCueDisplay" class="text-xl md:text-3xl font-medium text-zinc-800 transition-all duration-300 uppercase tracking-tight leading-snug max-w-5xl text-focus min-h-[1.5em]">
             SISTEMA EN ESPERA
         </div>
         
@@ -69,7 +69,7 @@
         
         <div class="bg-zinc-900/20 rounded-3xl p-8 border border-zinc-800/30">
             <div class="flex justify-between items-center mb-6 text-[10px] font-black tracking-[0.3em] text-zinc-700 uppercase">
-                <span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Master Reference (MP3)</span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Master Reference</span>
                 <span id="timeDisplay" class="font-mono text-blue-500 text-2xl">00:00</span>
             </div>
             <div id="waveform"></div>
@@ -78,7 +78,7 @@
             </div>
         </div>
 
-        <div id="timelinesContainer" class="space-y-8 pb-24"></div>
+        <div id="timelinesContainer" class="space-y-8 pb-32"></div>
     </div>
 
     <script>
@@ -118,12 +118,13 @@
                 loadData();
             });
 
-            wavesurfer.on('audioprocess', () => updateUI(wavesurfer.getCurrentTime()));
+            // Sincronización robusta durante el play
+            wavesurfer.on('timeupdate', () => updateUI(wavesurfer.getCurrentTime()));
             wavesurfer.on('interaction', () => setTimeout(() => updateUI(wavesurfer.getCurrentTime()), 10));
 
             document.getElementById('playBtn').addEventListener('click', () => wavesurfer.playPause());
-            document.getElementById('filterSelect').addEventListener('change', () => {
-                focusedDepartment = null; 
+            document.getElementById('filterSelect').addEventListener('change', (e) => {
+                focusedDepartment = e.target.value === 'ALL' ? null : e.target.value;
                 updateUI(wavesurfer.getCurrentTime());
             });
         });
@@ -136,8 +137,9 @@
                     cues = results.data
                         .filter(row => row.Tiempo && row.Texto)
                         .map((row, index) => {
-                            if(row.Departamento) uniqueDepts.add(row.Departamento.trim());
-                            return { ...row, id: `cue-${index}`, seconds: timeToSeconds(row.Tiempo) };
+                            const dept = row.Departamento ? row.Departamento.trim() : "GENERAL";
+                            uniqueDepts.add(dept);
+                            return { ...row, id: `cue-${index}`, Departamento: dept, seconds: timeToSeconds(row.Tiempo) };
                         });
                     setupFilters();
                     drawTimelines();
@@ -151,12 +153,12 @@
             Array.from(uniqueDepts).sort().forEach(dept => {
                 const row = document.createElement('div');
                 row.className = "relative h-16 bg-zinc-900/10 rounded-2xl border border-zinc-800/20 flex items-center group";
-                row.innerHTML = `<span class="absolute -top-3.5 left-6 text-[10px] uppercase font-black text-zinc-300 bg-[#080808] px-3 py-1 tracking-[0.2em] border border-zinc-800 rounded-lg shadow-xl">${dept}</span>`;
+                row.innerHTML = `<span class="absolute -top-3.5 left-6 text-[10px] uppercase font-black text-zinc-300 bg-[#080808] px-3 py-1 tracking-[0.2em] border border-zinc-800 rounded-lg shadow-xl select-none">${dept}</span>`;
                 
                 const track = document.createElement('div');
                 track.className = "w-full h-full relative mx-8";
                 
-                cues.filter(c => c.Departamento?.trim() === dept).forEach(cue => {
+                cues.filter(c => c.Departamento === dept).forEach(cue => {
                     const dot = document.createElement('div');
                     dot.id = cue.id;
                     dot.className = "cue-dot absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full";
@@ -166,7 +168,9 @@
                     
                     dot.onclick = (e) => {
                         e.stopPropagation();
-                        focusedDepartment = cue.Departamento?.trim();
+                        focusedDepartment = cue.Departamento;
+                        // Sincronizar el select visualmente si cambia el foco
+                        document.getElementById('filterSelect').value = 'ALL'; 
                         wavesurfer.setTime(cue.seconds);
                         updateUI(cue.seconds);
                     };
@@ -179,15 +183,15 @@
 
         function updateUI(time) {
             document.getElementById('timeDisplay').innerText = formatTime(time);
-            const filterVal = document.getElementById('filterSelect').value;
-            const activeDept = filterVal !== 'ALL' ? filterVal : focusedDepartment;
-
-            const filteredCues = activeDept 
-                ? cues.filter(c => c.Departamento?.trim() === activeDept)
+            
+            // Lógica de filtrado dinámico
+            const filteredCues = focusedDepartment 
+                ? cues.filter(c => c.Departamento === focusedDepartment)
                 : cues;
 
-            const active = filteredCues
-                .filter(c => c.seconds <= time + 0.1)
+            // Encontrar la última nota que ya pasó el cabezal de reproducción
+            const active = [...filteredCues]
+                .filter(c => c.seconds <= time + 0.05)
                 .sort((a, b) => b.seconds - a.seconds)[0];
 
             const display = document.getElementById('activeCueDisplay');
@@ -196,37 +200,39 @@
             if (active) { 
                 if (display.innerText !== active.Texto) {
                     display.classList.remove('text-focus');
-                    void display.offsetWidth;
+                    void display.offsetWidth; // Reset animación
                     display.classList.add('text-focus');
                 }
                 display.innerText = active.Texto;
                 display.style.color = active.Color || '#fff';
-                deptLabel.innerText = `[ ${active.Departamento || 'GENERAL'} ]`;
-                deptLabel.style.borderColor = active.Color || 'transparent';
+                deptLabel.innerText = active.Departamento;
+                deptLabel.style.display = 'inline-block';
             } else {
                 display.innerText = "SISTEMA EN ESPERA";
-                display.style.color = "#18181b";
+                display.style.color = "#27272a";
                 deptLabel.innerText = "---";
             }
 
+            // Resaltado visual en el timeline
             document.querySelectorAll('.cue-dot').forEach(d => d.classList.remove('active-focus'));
             if (active) {
                 const activeDot = document.getElementById(active.id);
                 if (activeDot) activeDot.classList.add('active-focus');
             }
 
+            // Próxima nota (según el filtro actual)
             const next = filteredCues
                 .filter(c => c.seconds > time)
                 .sort((a, b) => a.seconds - b.seconds)[0];
             
-            document.getElementById('nextCueDisplay').innerText = next ? `PRÓXIMO: ${next.Tiempo} - ${next.Texto}` : "FINAL DEL TRACK";
+            document.getElementById('nextCueDisplay').innerText = next ? `PRÓXIMO: ${formatTime(next.seconds)} - ${next.Texto}` : "FINAL DEL TRACK";
         }
 
         function setupFilters() {
             const select = document.getElementById('filterSelect');
-            uniqueDepts.forEach(d => {
+            Array.from(uniqueDepts).sort().forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = d; opt.innerText = d.toUpperCase();
+                opt.value = d; opt.innerText = d;
                 select.appendChild(opt);
             });
         }
