@@ -8,19 +8,19 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #080808; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow: hidden; }
+        body { background-color: #060606; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow: hidden; }
         
-        /* Cabezal fijo que no se desplaza */
+        /* Cabezal fijo con proporciones técnicas */
         .fixed-console { 
-            background: rgba(10, 10, 10, 0.98); 
-            backdrop-filter: blur(30px); 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(8, 8, 8, 0.98); 
+            backdrop-filter: blur(40px); 
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
             z-index: 100;
         }
 
-        /* Monitor con altura bloqueada para evitar saltos */
-        .monitor-locked-height {
-            height: 180px; /* Altura constante inamovible */
+        /* Monitor de Guion con espacio de aire para evitar solapamientos */
+        .monitor-safe-zone {
+            height: 220px; /* Espacio generoso pero bloqueado */
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -29,64 +29,73 @@
 
         .cue-dot { 
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            border: 2px solid rgba(0,0,0,0.4);
+            border: 2px solid rgba(0,0,0,0.5);
         }
         .cue-dot.active-focus { 
             transform: scale(2.2); 
-            box-shadow: 0 0 25px currentColor;
+            box-shadow: 0 0 20px currentColor;
             border: 2px solid white;
             z-index: 150;
         }
 
-        .text-focus { animation: slideIn 0.4s ease-out forwards; }
+        .text-focus { animation: slideIn 0.5s ease-out forwards; }
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+            from { opacity: 0; transform: translateY(8px); filter: blur(3px); }
             to { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
 
-        .custom-scroll::-webkit-scrollbar { width: 4px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .custom-scroll::-webkit-scrollbar { width: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
     </style>
 </head>
 <body class="h-screen flex flex-col">
 
-    <header class="fixed-console shrink-0 shadow-2xl">
+    <div id="loginOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div class="bg-zinc-950 p-10 rounded-3xl border border-zinc-900 w-full max-w-sm text-center shadow-2xl">
+            <h1 class="text-[9px] tracking-[0.5em] text-zinc-700 mb-10 uppercase font-black">Control de Misión - Casa Ecuador</h1>
+            <input type="password" id="passInput" placeholder="SISTEMA BLOQUEADO" 
+                   class="w-full bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl mb-6 text-center text-white outline-none focus:border-blue-600 transition-all font-mono tracking-widest uppercase text-xs">
+            <button onclick="checkPass()" class="w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] hover:bg-zinc-200 transition-all uppercase tracking-[0.3em]">Entrar</button>
+        </div>
+    </div>
+
+    <header class="fixed-console shrink-0">
         
         <div class="flex justify-between items-center px-10 py-5 border-b border-white/5">
             <div class="text-[10px] font-black tracking-[0.7em] text-white/70 uppercase select-none">
                 Casa Ecuador
             </div>
             <div class="flex items-center gap-6">
-                <span class="text-[8px] font-black text-zinc-600 tracking-widest uppercase">Filtro Maestro:</span>
-                <select id="filterSelect" class="bg-zinc-900 text-[10px] text-zinc-400 p-2 px-4 rounded-xl border border-zinc-800 outline-none cursor-pointer font-bold uppercase transition-all hover:border-zinc-600">
+                <span class="text-[8px] font-black text-zinc-700 tracking-[0.3em] uppercase">Filtro Maestro:</span>
+                <select id="filterSelect" class="bg-zinc-900 text-[9px] text-zinc-500 p-2 px-4 rounded-xl border border-zinc-800 outline-none cursor-pointer font-bold uppercase transition-all hover:text-zinc-300">
                     <option value="ALL">TODOS LOS DEPARTAMENTOS</option>
                 </select>
             </div>
         </div>
 
-        <div class="monitor-locked-height px-10">
-            <div id="deptLabel" class="text-white tracking-[0.6em] text-[10px] uppercase mb-4 font-black bg-zinc-800/80 px-4 py-1.5 rounded-lg border border-white/10 shadow-lg transition-all">---</div>
+        <div class="monitor-safe-zone px-20">
+            <div id="deptLabel" class="text-white tracking-[0.5em] text-[9px] uppercase mb-6 font-black bg-zinc-800/60 px-4 py-1.5 rounded-md border border-white/5">---</div>
             
-            <div id="activeCueDisplay" class="text-lg md:text-2xl font-medium text-zinc-800 transition-all duration-500 uppercase tracking-tight leading-snug max-w-5xl overflow-y-auto max-h-[100px] px-4 custom-scroll">
+            <div id="activeCueDisplay" class="text-base md:text-lg lg:text-xl font-light text-zinc-900 transition-all duration-500 uppercase tracking-wide leading-relaxed max-w-5xl overflow-y-auto max-h-[100px] px-8 custom-scroll">
                 SISTEMA EN ESPERA
             </div>
             
-            <div id="nextCueDisplay" class="text-zinc-600 text-[9px] mt-6 font-mono uppercase tracking-[0.3em] bg-zinc-900/30 px-6 py-2 rounded-full border border-zinc-800/50">
+            <div id="nextCueDisplay" class="text-zinc-700 text-[8px] mt-8 font-mono uppercase tracking-[0.3em] bg-zinc-900/20 px-6 py-2 rounded-full border border-white/5">
                 Próximo: --:--
             </div>
         </div>
 
-        <div class="bg-zinc-950/50 p-6 px-10 border-t border-white/5">
+        <div class="bg-black/40 p-6 px-10 border-t border-white/5">
             <div class="max-w-7xl mx-auto">
-                <div class="flex justify-between items-center mb-4 text-[9px] font-black tracking-[0.4em] text-zinc-700 uppercase">
-                    <span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></span> Master Reference</span>
-                    <span id="timeDisplay" class="font-mono text-blue-500 text-2xl">00:00</span>
+                <div class="flex justify-between items-center mb-4 text-[8px] font-black tracking-[0.4em] text-zinc-800 uppercase">
+                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></span> Master Track</span>
+                    <span id="timeDisplay" class="font-mono text-blue-600 text-xl">00:00</span>
                 </div>
                 
-                <div id="waveform" class="mb-6"></div>
+                <div id="waveform" class="mb-6 opacity-60 hover:opacity-100 transition-opacity"></div>
                 
                 <div class="flex justify-center">
-                    <button id="playBtn" class="bg-white text-black px-16 py-4 rounded-2xl text-[11px] font-black hover:bg-zinc-200 transition-all active:scale-95 shadow-[0_0_30px_rgba(255,255,255,0.1)] uppercase tracking-[0.2em]">
+                    <button id="playBtn" class="bg-zinc-100 text-black px-16 py-3.5 rounded-full text-[10px] font-black hover:bg-white transition-all active:scale-95 shadow-xl uppercase tracking-[0.3em]">
                         Play / Pausa
                     </button>
                 </div>
@@ -94,7 +103,7 @@
         </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-10 pt-16 bg-[#080808] custom-scroll">
+    <main class="flex-1 overflow-y-auto p-10 pt-16 bg-[#060606] custom-scroll">
         <div id="timelinesContainer" class="space-y-12 pb-40 max-w-7xl mx-auto"></div>
     </main>
 
@@ -110,13 +119,26 @@
         let focusedDepartment = null; 
         let lastActiveId = null;
 
+        // SOPORTE PARA TECLA ENTER EN LOGIN
+        document.getElementById('passInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') checkPass();
+        });
+
+        function checkPass() {
+            const val = document.getElementById('passInput').value;
+            if(val === PASS_CORRECTA) {
+                document.getElementById('loginOverlay').style.opacity = '0';
+                setTimeout(() => document.getElementById('loginOverlay').remove(), 500);
+            }
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             wavesurfer = WaveSurfer.create({
                 container: '#waveform',
-                waveColor: '#1a1a1a',
+                waveColor: '#111',
                 progressColor: '#2563eb',
                 cursorColor: '#ffffff',
-                height: 60,
+                height: 45, // WAVEFORM MÁS FINO
                 barWidth: 2,
                 barGap: 3,
                 responsive: true
@@ -165,8 +187,8 @@
             container.innerHTML = ''; 
             Array.from(uniqueDepts).sort().forEach(dept => {
                 const row = document.createElement('div');
-                row.className = "relative h-16 bg-zinc-900/10 rounded-2xl border border-zinc-800/20 flex items-center";
-                row.innerHTML = `<span class="absolute -top-4 left-6 text-[10px] uppercase font-black text-zinc-500 bg-[#080808] px-4 py-1 tracking-[0.2em] border border-zinc-800 rounded-lg shadow-xl select-none">${dept}</span>`;
+                row.className = "relative h-14 bg-zinc-900/10 rounded-2xl border border-white/5 flex items-center";
+                row.innerHTML = `<span class="absolute -top-3.5 left-6 text-[9px] uppercase font-black text-zinc-600 bg-[#060606] px-4 py-1 tracking-[0.25em] border border-zinc-900 rounded-md shadow-xl select-none">${dept}</span>`;
                 
                 const track = document.createElement('div');
                 track.className = "w-full h-full relative mx-12";
@@ -174,10 +196,10 @@
                 cues.filter(c => c.Departamento === dept).forEach(cue => {
                     const dot = document.createElement('div');
                     dot.id = cue.id;
-                    dot.className = "cue-dot absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-lg";
+                    dot.className = "cue-dot absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full shadow-lg";
                     dot.style.left = `${(cue.seconds / duration) * 100}%`;
-                    dot.style.backgroundColor = cue.Color || '#3f3f46';
-                    dot.style.color = cue.Color || '#3f3f46';
+                    dot.style.backgroundColor = cue.Color || '#333';
+                    dot.style.color = cue.Color || '#333';
                     
                     dot.onclick = (e) => {
                         e.stopPropagation();
@@ -212,7 +234,7 @@
                     display.innerText = active.Texto;
                     display.style.color = active.Color || '#fff';
                     deptLabel.innerText = active.Departamento;
-                    deptLabel.style.color = active.Color || '#fff';
+                    deptLabel.style.borderColor = active.Color || 'rgba(255,255,255,0.05)';
                     
                     display.classList.remove('text-focus');
                     void display.offsetWidth;
@@ -221,9 +243,8 @@
             } else if (!active && lastActiveId !== null) {
                 lastActiveId = null;
                 display.innerText = "SISTEMA EN ESPERA";
-                display.style.color = "#27272a";
+                display.style.color = "#1a1a1a";
                 deptLabel.innerText = "---";
-                deptLabel.style.color = "#52525b";
             }
 
             document.querySelectorAll('.cue-dot').forEach(d => d.classList.remove('active-focus'));
@@ -233,7 +254,7 @@
             }
 
             const next = pool.filter(c => c.seconds > time).sort((a, b) => a.seconds - b.seconds)[0];
-            document.getElementById('nextCueDisplay').innerText = next ? `PRÓXIMO: ${formatTime(next.seconds)} - ${next.Texto}` : "FINAL DEL TRACK";
+            document.getElementById('nextCueDisplay').innerText = next ? `PRÓXIMO: ${formatTime(next.seconds)} - ${next.Texto}` : "FINAL";
         }
 
         function setupFilters() {
