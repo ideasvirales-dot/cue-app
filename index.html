@@ -8,8 +8,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #080808; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow: hidden; }
-        .glass { background: rgba(12, 12, 12, 0.98); backdrop-filter: blur(25px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+        body { background-color: #080808; color: #e2e8f0; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(12, 12, 12, 0.98); backdrop-filter: blur(30px); border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
         
         .cue-dot { 
             transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
@@ -24,16 +24,18 @@
         }
 
         #loginOverlay { background-color: #050505; }
-        
-        /* Animación de entrada: solo se activa cuando cambia el ID de la nota */
         .text-focus { animation: slideIn 0.4s ease-out forwards; }
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); filter: blur(4px); }
+            from { opacity: 0; transform: translateY(15px); filter: blur(5px); }
             to { opacity: 1; transform: translateY(0); filter: blur(0); }
         }
+
+        /* Scrollbar personalizado para textos muy largos */
+        #activeCueDisplay::-webkit-scrollbar { width: 4px; }
+        #activeCueDisplay::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
     </style>
 </head>
-<body class="h-screen flex flex-col">
+<body class="h-screen flex flex-col overflow-hidden">
 
     <div id="loginOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
         <div class="bg-zinc-950 p-10 rounded-3xl border border-zinc-900 w-full max-w-md text-center shadow-2xl">
@@ -43,9 +45,9 @@
         </div>
     </div>
 
-    <div class="glass h-1/3 flex flex-col justify-end items-center p-10 pt-16 pb-12 text-center relative z-20">
+    <div class="glass min-h-[40vh] flex flex-col justify-center items-center p-12 pt-20 pb-12 text-center relative z-20">
         
-        <div class="absolute top-8 left-8 text-[10px] font-black tracking-[0.5em] text-white/70 uppercase select-none">
+        <div class="absolute top-8 left-8 text-[10px] font-black tracking-[0.6em] text-white/70 uppercase select-none">
             Casa Ecuador
         </div>
 
@@ -56,21 +58,22 @@
             </select>
         </div>
         
-        <div id="deptLabel" class="text-zinc-400 tracking-[0.5em] text-[12px] uppercase mb-4 font-black bg-zinc-900/80 px-5 py-1.5 rounded-lg border border-white/10 shadow-lg transition-colors">---</div>
+        <div id="deptLabel" class="text-white tracking-[0.6em] text-[11px] uppercase mb-6 font-black bg-zinc-800/80 px-5 py-2 rounded-lg border border-white/10 shadow-xl">---</div>
         
-        <div id="activeCueDisplay" class="text-xl md:text-3xl font-medium text-zinc-800 transition-all duration-300 uppercase tracking-tight leading-snug max-w-5xl min-h-[1.5em]">
+        <div id="activeCueDisplay" class="text-xl md:text-2xl lg:text-3xl font-medium text-zinc-800 transition-all duration-500 uppercase tracking-tight leading-relaxed max-w-6xl overflow-y-auto max-h-[25vh] px-4">
             SISTEMA EN ESPERA
         </div>
         
-        <div id="nextCueDisplay" class="text-zinc-600 text-[9px] mt-8 font-mono uppercase tracking-[0.3em] bg-zinc-900/30 px-6 py-2 rounded-full border border-zinc-800/50">
+        <div id="nextCueDisplay" class="text-zinc-600 text-[9px] mt-10 font-mono uppercase tracking-[0.3em] bg-zinc-900/30 px-6 py-2 rounded-full border border-zinc-800/50">
             Próximo: --:--
         </div>
     </div>
 
     <div class="flex-1 overflow-y-auto p-8 space-y-10 bg-[#080808]">
+        
         <div class="bg-zinc-900/20 rounded-3xl p-8 border border-zinc-800/30">
             <div class="flex justify-between items-center mb-6 text-[10px] font-black tracking-[0.3em] text-zinc-700 uppercase">
-                <span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Master Reference</span>
+                <span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Master Reference (MP3)</span>
                 <span id="timeDisplay" class="font-mono text-blue-500 text-2xl">00:00</span>
             </div>
             <div id="waveform"></div>
@@ -79,7 +82,7 @@
             </div>
         </div>
 
-        <div id="timelinesContainer" class="space-y-8 pb-32"></div>
+        <div id="timelinesContainer" class="space-y-12 pb-32"></div>
     </div>
 
     <script>
@@ -92,7 +95,7 @@
         let duration = 0;
         let uniqueDepts = new Set();
         let focusedDepartment = null; 
-        let lastActiveCueId = null; // Variable clave para evitar que el texto desaparezca en play
+        let lastActiveId = null;
 
         function checkPass() {
             const val = document.getElementById('passInput').value;
@@ -120,17 +123,17 @@
                 loadData();
             });
 
-            // Usamos 'timeupdate' para que la UI se actualice fluidamente en Play
+            // ESCUCHADOR CRÍTICO: 'timeupdate' asegura que se lea en PLAY
             wavesurfer.on('timeupdate', () => updateUI(wavesurfer.getCurrentTime()));
             wavesurfer.on('interaction', () => {
-                lastActiveCueId = null; // Reset para forzar actualización al saltar manualmente
+                lastActiveId = null; // Reset para forzar renderizado al saltar
                 updateUI(wavesurfer.getCurrentTime());
             });
 
             document.getElementById('playBtn').addEventListener('click', () => wavesurfer.playPause());
             document.getElementById('filterSelect').addEventListener('change', (e) => {
                 focusedDepartment = e.target.value === 'ALL' ? null : e.target.value;
-                lastActiveCueId = null; 
+                lastActiveId = null;
                 updateUI(wavesurfer.getCurrentTime());
             });
         });
@@ -143,9 +146,9 @@
                     cues = results.data
                         .filter(row => row.Tiempo && row.Texto)
                         .map((row, index) => {
-                            const dept = row.Departamento ? row.Departamento.trim() : "GENERAL";
-                            uniqueDepts.add(dept);
-                            return { ...row, id: `cue-${index}`, Departamento: dept, seconds: timeToSeconds(row.Tiempo) };
+                            const d = row.Departamento ? row.Departamento.trim() : "GENERAL";
+                            uniqueDepts.add(d);
+                            return { ...row, id: `cue-${index}`, Departamento: d, seconds: timeToSeconds(row.Tiempo) };
                         });
                     setupFilters();
                     drawTimelines();
@@ -159,10 +162,10 @@
             Array.from(uniqueDepts).sort().forEach(dept => {
                 const row = document.createElement('div');
                 row.className = "relative h-16 bg-zinc-900/10 rounded-2xl border border-zinc-800/20 flex items-center group";
-                row.innerHTML = `<span class="absolute -top-3.5 left-6 text-[10px] uppercase font-black text-zinc-300 bg-[#080808] px-3 py-1 tracking-[0.2em] border border-zinc-800 rounded-lg shadow-xl select-none">${dept}</span>`;
+                row.innerHTML = `<span class="absolute -top-4 left-6 text-[11px] uppercase font-black text-zinc-300 bg-[#080808] px-4 py-1 tracking-[0.2em] border border-zinc-800 rounded-lg shadow-xl">${dept}</span>`;
                 
                 const track = document.createElement('div');
-                track.className = "w-full h-full relative mx-8";
+                track.className = "w-full h-full relative mx-10";
                 
                 cues.filter(c => c.Departamento === dept).forEach(cue => {
                     const dot = document.createElement('div');
@@ -175,7 +178,7 @@
                     dot.onclick = (e) => {
                         e.stopPropagation();
                         focusedDepartment = cue.Departamento;
-                        lastActiveCueId = null; 
+                        lastActiveId = null; 
                         wavesurfer.setTime(cue.seconds);
                         updateUI(cue.seconds);
                     };
@@ -189,11 +192,14 @@
         function updateUI(time) {
             document.getElementById('timeDisplay').innerText = formatTime(time);
             
-            const filteredCues = focusedDepartment 
-                ? cues.filter(c => c.Departamento === focusedDepartment)
-                : cues;
+            // Lógica de Filtrado de Departamento
+            const currentFilter = document.getElementById('filterSelect').value;
+            const activeDept = currentFilter !== 'ALL' ? currentFilter : focusedDepartment;
 
-            const active = [...filteredCues]
+            const pool = activeDept ? cues.filter(c => c.Departamento === activeDept) : cues;
+
+            // Buscamos la nota activa (la última que ya pasó el tiempo actual)
+            const active = [...pool]
                 .filter(c => c.seconds <= time + 0.05)
                 .sort((a, b) => b.seconds - a.seconds)[0];
 
@@ -201,39 +207,35 @@
             const deptLabel = document.getElementById('deptLabel');
 
             if (active) { 
-                // CRÍTICO: Solo actualizamos el DOM y disparamos la animación si la nota es NUEVA
-                if (active.id !== lastActiveCueId) {
-                    lastActiveCueId = active.id;
-                    
+                // Evitamos refrescos innecesarios que rompen la animación y visibilidad en Play
+                if (active.id !== lastActiveId) {
+                    lastActiveId = active.id;
                     display.innerText = active.Texto;
                     display.style.color = active.Color || '#fff';
                     deptLabel.innerText = active.Departamento;
+                    deptLabel.style.color = active.Color || '#fff';
                     
-                    // Reiniciar animación de entrada
                     display.classList.remove('text-focus');
-                    void display.offsetWidth; 
+                    void display.offsetWidth;
                     display.classList.add('text-focus');
                 }
-            } else {
-                if (lastActiveCueId !== null) {
-                    lastActiveCueId = null;
-                    display.innerText = "SISTEMA EN ESPERA";
-                    display.style.color = "#27272a";
-                    deptLabel.innerText = "---";
-                }
+            } else if (!active && lastActiveId !== null) {
+                lastActiveId = null;
+                display.innerText = "SISTEMA EN ESPERA";
+                display.style.color = "#27272a";
+                deptLabel.innerText = "---";
+                deptLabel.style.color = "#52525b";
             }
 
-            // Actualizar puntos visuales
+            // Resaltado de puntos
             document.querySelectorAll('.cue-dot').forEach(d => d.classList.remove('active-focus'));
             if (active) {
                 const activeDot = document.getElementById(active.id);
                 if (activeDot) activeDot.classList.add('active-focus');
             }
 
-            const next = filteredCues
-                .filter(c => c.seconds > time)
-                .sort((a, b) => a.seconds - b.seconds)[0];
-            
+            // Próximo Cue
+            const next = pool.filter(c => c.seconds > time).sort((a, b) => a.seconds - b.seconds)[0];
             document.getElementById('nextCueDisplay').innerText = next ? `PRÓXIMO: ${formatTime(next.seconds)} - ${next.Texto}` : "FINAL DEL TRACK";
         }
 
@@ -241,7 +243,7 @@
             const select = document.getElementById('filterSelect');
             Array.from(uniqueDepts).sort().forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = d; opt.innerText = d;
+                opt.value = d; opt.innerText = d.toUpperCase();
                 select.appendChild(opt);
             });
         }
