@@ -3,73 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Show Control - Cue Sheet | Casa Ecuador</title>
+    <title>Show Control Pro - Casa Ecuador</title>
     <script src="https://unpkg.com/wavesurfer.js@7"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #0a0a0a; color: #e2e8f0; font-family: 'Inter', sans-serif; }
-        .glass { background: rgba(18, 18, 18, 0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255, 255, 255, 0.03); }
-        .cue-dot { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); border: 1px solid rgba(0,0,0,0.3); }
-        .cue-dot:hover { transform: scale(1.8) translateY(-25%); cursor: pointer; filter: brightness(1.4); z-index: 50; }
-        #loginOverlay { background-color: #050505; transition: opacity 0.5s ease-in-out; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+        body { background-color: #080808; color: #e2e8f0; font-family: 'Inter', sans-serif; }
+        .glass { background: rgba(12, 12, 12, 0.95); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        
+        /* Estilo de las notas (Cues) */
+        .cue-dot { 
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            border: 2px solid rgba(0,0,0,0.4);
+            box-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .cue-dot:hover { transform: scale(1.5); cursor: pointer; z-index: 100; }
+        .cue-dot.active-focus { 
+            transform: scale(2); 
+            box-shadow: 0 0 20px currentColor;
+            border: 2px solid white;
+            z-index: 150;
+        }
+
+        #loginOverlay { background-color: #050505; }
+        
+        /* Animación de entrada de texto */
+        .text-focus { animation: slideIn 0.4s ease-out; }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); filter: blur(5px); }
+            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden">
 
     <div id="loginOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="bg-zinc-950 p-8 rounded-2xl border border-zinc-900 w-full max-w-sm text-center shadow-2xl">
-            <h1 class="text-[10px] tracking-[0.4em] text-zinc-600 mb-8 uppercase font-bold">Acceso Restringido - Producción</h1>
-            <input type="password" id="passInput" placeholder="CONTRASENA" class="w-full bg-zinc-900 border border-zinc-800 p-4 rounded-xl mb-4 text-center text-white outline-none focus:border-blue-600 transition-all font-mono">
-            <button onclick="checkPass()" class="w-full bg-white text-black py-4 rounded-xl font-black text-xs hover:bg-blue-500 hover:text-white transition-all uppercase tracking-widest">Entrar al Sistema</button>
-            <p id="errorMsg" class="text-red-600 text-[10px] mt-6 hidden uppercase tracking-widest font-bold">Clave Incorrecta</p>
+        <div class="bg-zinc-950 p-10 rounded-3xl border border-zinc-900 w-full max-w-md text-center shadow-[0_0_50px_rgba(0,0,0,1)]">
+            <h1 class="text-[9px] tracking-[0.5em] text-zinc-600 mb-10 uppercase font-black">Control de Misión - Casa Ecuador</h1>
+            <input type="password" id="passInput" placeholder="SISTEMA BLOQUEADO" class="w-full bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl mb-6 text-center text-white outline-none focus:border-blue-500 transition-all font-mono tracking-widest">
+            <button onclick="checkPass()" class="w-full bg-blue-600 text-white py-4 rounded-2xl font-black text-xs hover:bg-blue-500 transition-all uppercase tracking-widest shadow-lg shadow-blue-900/20">Desbloquear</button>
+            <p id="errorMsg" class="text-red-500 text-[10px] mt-6 hidden uppercase tracking-[0.3em] font-bold">Acceso Denegado</p>
         </div>
     </div>
 
-    <div class="glass h-1/3 flex flex-col justify-center items-center p-6 text-center relative z-20">
-        <div class="absolute top-6 right-6">
-            <select id="filterSelect" class="bg-zinc-900 text-[9px] text-zinc-500 p-2 px-3 rounded-lg border border-zinc-800 outline-none hover:border-zinc-600 transition-colors cursor-pointer font-bold tracking-tighter">
+    <div class="glass h-1/3 flex flex-col justify-center items-center p-8 pt-12 text-center relative z-20">
+        <div class="absolute top-8 right-8 flex items-center gap-4">
+            <span class="text-[9px] font-black text-zinc-600 tracking-widest uppercase">Filtro:</span>
+            <select id="filterSelect" class="bg-zinc-900 text-[10px] text-zinc-400 p-2 px-4 rounded-xl border border-zinc-800 outline-none focus:border-zinc-600 cursor-pointer font-bold">
                 <option value="ALL">TODOS LOS DEPARTAMENTOS</option>
             </select>
         </div>
         
-        <h2 class="text-zinc-700 tracking-[0.3em] text-[10px] uppercase mb-4 font-black">Cue Activo en Escena</h2>
-        <div id="activeCueDisplay" class="text-2xl md:text-5xl font-light text-white transition-all duration-500 uppercase tracking-tighter leading-tight max-w-4xl">
+        <div id="deptLabel" class="text-zinc-500 tracking-[0.4em] text-xs uppercase mb-3 font-black h-4">---</div>
+        <div id="activeCueDisplay" class="text-2xl md:text-4xl font-light text-zinc-800 transition-all duration-300 uppercase tracking-tighter leading-tight max-w-5xl text-focus">
             SISTEMA EN ESPERA
         </div>
-        <div id="nextCueDisplay" class="text-zinc-600 text-[10px] mt-6 font-mono uppercase tracking-[0.25em] border border-zinc-800 px-4 py-1 rounded-full">
+        <div id="nextCueDisplay" class="text-zinc-600 text-[9px] mt-8 font-mono uppercase tracking-[0.3em] bg-zinc-900/50 px-6 py-2 rounded-full border border-zinc-800/50">
             Próximo: --:--
         </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-6 space-y-8 bg-[#0a0a0a]">
+    <div class="flex-1 overflow-y-auto p-8 space-y-10 bg-[#080808]">
         
-        <div class="bg-zinc-900/20 rounded-2xl p-6 border border-zinc-800/30">
-            <div class="flex justify-between items-center mb-4 text-[10px] font-bold tracking-[0.2em] text-zinc-600 uppercase">
-                <span>Master Reference Track (MP3)</span>
-                <span id="timeDisplay" class="font-mono text-blue-500 text-lg">00:00</span>
+        <div class="bg-zinc-900/20 rounded-3xl p-8 border border-zinc-800/30">
+            <div class="flex justify-between items-center mb-6 text-[10px] font-black tracking-[0.3em] text-zinc-700 uppercase">
+                <span class="flex items-center gap-2"><span class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></span> Master Reference</span>
+                <span id="timeDisplay" class="font-mono text-blue-500 text-2xl">00:00</span>
             </div>
             <div id="waveform"></div>
-            <div class="flex justify-center mt-8">
-                <button id="playBtn" class="bg-zinc-800 text-white px-10 py-3 rounded-full text-[10px] font-black hover:bg-blue-600 uppercase tracking-widest transition-all active:scale-95 border border-zinc-700">PLAY / PAUSA</button>
+            <div class="flex justify-center mt-10">
+                <button id="playBtn" class="bg-zinc-100 text-black px-12 py-4 rounded-2xl text-[11px] font-black hover:bg-white uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl">PLAY / PAUSA</button>
             </div>
         </div>
 
-        <div id="timelinesContainer" class="space-y-6 pb-20"></div>
+        <div id="timelinesContainer" class="space-y-8 pb-24"></div>
     </div>
 
     <script>
-        // CONFIGURACIÓN PRIVADA
         const GOOGLE_SHEET_CSV = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRdJ2DaW8hsb4ym2GrsDSYS87oXbT910zIQZuXkA0Cnh_SIqKtw-ssB2-hTowVoeybOO-BYdxUxx5nm/pub?output=csv"; 
         const PASS_CORRECTA = "ec2026"; 
-        const AUDIO_FILE = "audio.mp3"; // El archivo debe llamarse exactamente así en GitHub
+        const AUDIO_FILE = "audio.mp3"; 
 
         let cues = [];
         let wavesurfer;
         let duration = 0;
         let uniqueDepts = new Set();
+        let selectedCueId = null;
 
         function checkPass() {
             const val = document.getElementById('passInput').value;
@@ -87,24 +106,30 @@
             wavesurfer = WaveSurfer.create({
                 container: '#waveform',
                 waveColor: '#1a1a1a',
-                progressColor: '#2563eb',
+                progressColor: '#3b82f6',
                 cursorColor: '#ffffff',
-                height: 80,
+                height: 90,
                 barWidth: 2,
-                barGap: 3,
+                barGap: 4,
                 responsive: true,
                 normalize: true
             });
 
             wavesurfer.load(AUDIO_FILE);
-            
             wavesurfer.on('ready', () => {
                 duration = wavesurfer.getDuration();
                 loadData();
             });
 
-            wavesurfer.on('audioprocess', () => updateUI(wavesurfer.getCurrentTime()));
-            wavesurfer.on('interaction', () => setTimeout(() => updateUI(wavesurfer.getCurrentTime()), 10));
+            wavesurfer.on('audioprocess', () => {
+                selectedCueId = null;
+                updateUI(wavesurfer.getCurrentTime());
+            });
+
+            wavesurfer.on('interaction', () => {
+                selectedCueId = null;
+                setTimeout(() => updateUI(wavesurfer.getCurrentTime()), 10);
+            });
 
             document.getElementById('playBtn').addEventListener('click', () => wavesurfer.playPause());
             document.getElementById('filterSelect').addEventListener('change', () => updateUI(wavesurfer.getCurrentTime()));
@@ -117,9 +142,13 @@
                 complete: (results) => {
                     cues = results.data
                         .filter(row => row.Tiempo && row.Texto)
-                        .map(row => {
+                        .map((row, index) => {
                             if(row.Departamento) uniqueDepts.add(row.Departamento.trim());
-                            return { ...row, seconds: timeToSeconds(row.Tiempo) };
+                            return { 
+                                ...row, 
+                                id: `cue-${index}`,
+                                seconds: timeToSeconds(row.Tiempo) 
+                            };
                         });
                     setupFilters();
                     drawTimelines();
@@ -132,21 +161,26 @@
             container.innerHTML = ''; 
             Array.from(uniqueDepts).sort().forEach(dept => {
                 const row = document.createElement('div');
-                row.className = "relative h-14 bg-zinc-900/10 rounded-xl border border-zinc-800/20 flex items-center group hover:bg-zinc-900/20 transition-all";
-                row.innerHTML = `<span class="absolute -top-2.5 left-4 text-[8px] uppercase font-black text-zinc-500 bg-[#0a0a0a] px-2 tracking-[0.2em] border border-zinc-800/50 rounded-md">${dept}</span>`;
+                row.className = "relative h-16 bg-zinc-900/10 rounded-2xl border border-zinc-800/20 flex items-center group";
+                // Se aumentó el tamaño del texto de la disciplina en la línea de tiempo y su visibilidad
+                row.innerHTML = `<span class="absolute -top-3 left-6 text-[10px] uppercase font-black text-zinc-400 bg-[#080808] px-3 tracking-[0.2em] border border-zinc-800 rounded-lg">${dept}</span>`;
                 
                 const track = document.createElement('div');
-                track.className = "w-full h-full relative mx-6";
+                track.className = "w-full h-full relative mx-8";
                 
                 cues.filter(c => c.Departamento?.trim() === dept).forEach(cue => {
                     const dot = document.createElement('div');
-                    dot.className = "cue-dot absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full shadow-lg";
+                    dot.id = cue.id;
+                    dot.className = "cue-dot absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full";
                     dot.style.left = `${(cue.seconds / duration) * 100}%`;
                     dot.style.backgroundColor = cue.Color || '#3f3f46';
+                    dot.style.color = cue.Color || '#3f3f46';
+                    
                     dot.onclick = (e) => {
                         e.stopPropagation();
+                        selectedCueId = cue.id;
                         wavesurfer.setTime(cue.seconds);
-                        updateUI(cue.seconds);
+                        updateUI(cue.seconds, cue);
                     };
                     track.appendChild(dot);
                 });
@@ -155,21 +189,42 @@
             });
         }
 
-        function updateUI(time) {
+        function updateUI(time, forcedCue = null) {
             document.getElementById('timeDisplay').innerText = formatTime(time);
             const filter = document.getElementById('filterSelect').value;
             
-            const active = cues
-                .filter(c => c.seconds <= time + 0.1 && (filter === 'ALL' || c.Departamento?.trim() === filter))
-                .sort((a, b) => b.seconds - a.seconds)[0];
+            let active;
+            if (forcedCue) {
+                active = forcedCue;
+            } else {
+                active = cues
+                    .filter(c => c.seconds <= time + 0.1 && (filter === 'ALL' || c.Departamento?.trim() === filter))
+                    .sort((a, b) => b.seconds - a.seconds)[0];
+            }
 
             const display = document.getElementById('activeCueDisplay');
+            const deptLabel = document.getElementById('deptLabel');
+
             if (active) { 
+                if (display.innerText !== active.Texto) {
+                    display.classList.remove('text-focus');
+                    void display.offsetWidth;
+                    display.classList.add('text-focus');
+                }
                 display.innerText = active.Texto;
                 display.style.color = active.Color || '#fff';
+                deptLabel.innerText = `[ ${active.Departamento || 'GENERAL'} ]`;
+                deptLabel.style.color = active.Color || '#a1a1aa'; // Color más claro para mejor lectura
             } else {
                 display.innerText = "SISTEMA EN ESPERA";
-                display.style.color = "#27272a";
+                display.style.color = "#18181b";
+                deptLabel.innerText = "---";
+            }
+
+            document.querySelectorAll('.cue-dot').forEach(d => d.classList.remove('active-focus'));
+            if (active) {
+                const activeDot = document.getElementById(active.id);
+                if (activeDot) activeDot.classList.add('active-focus');
             }
 
             const next = cues
@@ -190,7 +245,9 @@
 
         function timeToSeconds(str) {
             const p = str.split(':');
-            return p.length === 2 ? parseInt(p[0]) * 60 + parseInt(p[1]) : 0;
+            if(p.length === 2) return parseInt(p[0]) * 60 + parseInt(p[1]);
+            if(p.length === 3) return parseInt(p[0]) * 3600 + parseInt(p[1]) * 60 + parseInt(p[2]);
+            return 0;
         }
 
         function formatTime(seconds) {
