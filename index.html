@@ -8,94 +8,163 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        body { background-color: #060606; color: #e2e8f0; font-family: 'Inter', sans-serif; overflow: hidden; }
+        /* Configuración base premium */
+        body { 
+            background-color: #050505; /* Negro profundo */
+            color: #e2e8f0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', sans-serif; /* Stack de fuentes nativas Apple */
+            overflow: hidden; 
+            letter-spacing: -0.01em;
+        }
         
-        /* Cabezal fijo con proporciones técnicas */
+        /* LOGIN OVERLAY - Frosted Glass */
+        #loginOverlay { 
+            background-color: rgba(5, 5, 5, 0.8);
+            backdrop-filter: blur(20px);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 9999;
+        }
+        .login-card {
+            background: rgba(30, 30, 30, 0.6);
+            backdrop-filter: blur(50px) saturate(180%);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        /* CONSOLA SUPERIOR - Unified Glass Slab */
         .fixed-console { 
-            background: rgba(8, 8, 8, 0.98); 
-            backdrop-filter: blur(40px); 
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            background: rgba(20, 20, 20, 0.7); /* Más translúcido */
+            backdrop-filter: blur(50px) saturate(150%); /* Efecto Apple Glass pesado */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px -10px rgba(0,0,0,0.5);
             z-index: 100;
         }
 
-        /* Monitor de Guion con espacio de aire para evitar solapamientos */
+        /* MONITOR ZONE */
         .monitor-safe-zone {
-            height: 220px; /* Espacio generoso pero bloqueado */
+            height: 200px;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
         }
 
+        /* PUNTOS CUE - Más sutiles hasta el hover */
         .cue-dot { 
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            border: 2px solid rgba(0,0,0,0.5);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            border: 1.5px solid rgba(255,255,255,0.2);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .cue-dot:hover { 
+            transform: scale(1.8); 
+            border-color: white;
         }
         .cue-dot.active-focus { 
             transform: scale(2.2); 
-            box-shadow: 0 0 20px currentColor;
+            box-shadow: 0 0 25px currentColor, 0 0 5px currentColor inset;
             border: 2px solid white;
             z-index: 150;
         }
 
-        .text-focus { animation: slideIn 0.5s ease-out forwards; }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(8px); filter: blur(3px); }
-            to { opacity: 1; transform: translateY(0); filter: blur(0); }
+        /* Animación de texto premium */
+        .text-focus { animation: appleSlideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes appleSlideIn {
+            from { opacity: 0; transform: translateY(12px) scale(0.98); filter: blur(4px); }
+            to { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
 
-        .custom-scroll::-webkit-scrollbar { width: 3px; }
-        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }
+        /* Scrollbar invisible/minimalista */
+        .custom-scroll::-webkit-scrollbar { width: 0px; /* Oculto por defecto para limpieza */ }
+        .custom-scroll:hover::-webkit-scrollbar { width: 3px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 10px; }
+
+        /* Botones e Inputs refinados */
+        .apple-input {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        .apple-input:focus {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(59, 130, 246, 0.5); /* Azul sutil */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .apple-button {
+            background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(230,230,230,1) 100%);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: none;
+        }
+        .apple-button:active { 
+            transform: scale(0.97); 
+            background: #e5e5e5;
+        }
+
+        /* Select personalizado minimalist */
+        .minimal-select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col">
 
-    <div id="loginOverlay" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
-        <div class="bg-zinc-950 p-10 rounded-3xl border border-zinc-900 w-full max-w-sm text-center shadow-2xl">
-            <h1 class="text-[9px] tracking-[0.5em] text-zinc-700 mb-10 uppercase font-black">Control de Misión - Casa Ecuador</h1>
-            <input type="password" id="passInput" placeholder="SISTEMA BLOQUEADO" 
-                   class="w-full bg-zinc-900/50 border border-zinc-800 p-4 rounded-2xl mb-6 text-center text-white outline-none focus:border-blue-600 transition-all font-mono tracking-widest uppercase text-xs">
-            <button onclick="checkPass()" class="w-full bg-white text-black py-4 rounded-2xl font-black text-[10px] hover:bg-zinc-200 transition-all uppercase tracking-[0.3em]">Entrar</button>
+    <div id="loginOverlay" class="fixed inset-0 flex items-center justify-center p-4">
+        <div class="login-card p-12 rounded-[2rem] w-full max-w-sm text-center">
+            <div class="text-[9px] tracking-[0.6em] text-zinc-500 mb-12 uppercase font-bold select-none">
+                Casa Ecuador <span class="text-blue-500">.</span> Pro
+            </div>
+            <input type="password" id="passInput" placeholder="Credencial de Acceso" autofocus
+                   class="apple-input w-full p-4 rounded-2xl mb-6 text-center text-white outline-none font-medium tracking-wider text-xs placeholder:text-zinc-600 placeholder:font-normal placeholder:tracking-normal">
+            <button onclick="checkPass()" class="apple-button w-full text-black py-4 rounded-2xl font-bold text-[11px] uppercase tracking-[0.2em] transition-all">
+                Desbloquear Consola
+            </button>
+            <p id="loginError" class="text-red-500/80 text-[9px] mt-6 uppercase tracking-widest hidden font-medium animate-pulse">Clave Incorrecta</p>
         </div>
     </div>
 
     <header class="fixed-console shrink-0">
         
-        <div class="flex justify-between items-center px-10 py-5 border-b border-white/5">
-            <div class="text-[10px] font-black tracking-[0.7em] text-white/70 uppercase select-none">
+        <div class="flex justify-between items-center px-12 py-6">
+            <div class="text-[9px] font-bold tracking-[0.6em] text-white/50 uppercase select-none flex items-center gap-2">
+                <svg class="w-3 h-3 opacity-50" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
                 Casa Ecuador
             </div>
-            <div class="flex items-center gap-6">
-                <span class="text-[8px] font-black text-zinc-700 tracking-[0.3em] uppercase">Filtro Maestro:</span>
-                <select id="filterSelect" class="bg-zinc-900 text-[9px] text-zinc-500 p-2 px-4 rounded-xl border border-zinc-800 outline-none cursor-pointer font-bold uppercase transition-all hover:text-zinc-300">
-                    <option value="ALL">TODOS LOS DEPARTAMENTOS</option>
+            <div class="relative">
+                <select id="filterSelect" class="minimal-select bg-white/5 text-[9px] text-zinc-400 py-2.5 pl-5 rounded-xl border border-white/5 outline-none cursor-pointer font-bold uppercase transition-all hover:bg-white/10 hover:text-zinc-200 focus:border-blue-500/30">
+                    <option value="ALL">Filtro: Todos los Dptos.</option>
                 </select>
             </div>
         </div>
 
-        <div class="monitor-safe-zone px-20">
-            <div id="deptLabel" class="text-white tracking-[0.5em] text-[9px] uppercase mb-6 font-black bg-zinc-800/60 px-4 py-1.5 rounded-md border border-white/5">---</div>
-            
-            <div id="activeCueDisplay" class="text-base md:text-lg lg:text-xl font-light text-zinc-900 transition-all duration-500 uppercase tracking-wide leading-relaxed max-w-5xl overflow-y-auto max-h-[100px] px-8 custom-scroll">
-                SISTEMA EN ESPERA
+        <div class="monitor-safe-zone px-24">
+            <div id="deptLabel" class="text-blue-400/80 tracking-[0.4em] text-[9px] uppercase mb-4 font-bold flex items-center gap-2">
+                <span class="w-1 h-1 bg-current rounded-full"></span> ---
             </div>
             
-            <div id="nextCueDisplay" class="text-zinc-700 text-[8px] mt-8 font-mono uppercase tracking-[0.3em] bg-zinc-900/20 px-6 py-2 rounded-full border border-white/5">
+            <div id="activeCueDisplay" class="text-xl md:text-2xl lg:text-3xl font-light text-white/90 transition-all duration-500 uppercase tracking-wide leading-relaxed max-w-6xl overflow-y-auto max-h-[120px] px-4 custom-scroll text-center">
+                Sistema en Espera
+            </div>
+            
+            <div id="nextCueDisplay" class="text-zinc-600/80 text-[9px] mt-6 font-medium uppercase tracking-[0.25em]">
                 Próximo: --:--
             </div>
         </div>
 
-        <div class="bg-black/40 p-6 px-10 border-t border-white/5">
-            <div class="max-w-7xl mx-auto">
-                <div class="flex justify-between items-center mb-4 text-[8px] font-black tracking-[0.4em] text-zinc-800 uppercase">
-                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-blue-600 rounded-full animate-pulse"></span> Master Track</span>
-                    <span id="timeDisplay" class="font-mono text-blue-600 text-xl">00:00</span>
+        <div class="pb-8 px-12">
+            <div class="max-w-5xl mx-auto">
+                <div class="flex justify-between items-center mb-4 text-[8px] font-bold tracking-[0.3em] text-zinc-600 uppercase">
+                    <span class="flex items-center gap-2"><span class="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse shadow-[0_0_10px_rgba(59,130,246,0.5)]"></span> Master Track Ref.</span>
+                    <span id="timeDisplay" class="font-mono text-blue-400 text-lg font-medium">00:00</span>
                 </div>
                 
-                <div id="waveform" class="mb-6 opacity-60 hover:opacity-100 transition-opacity"></div>
+                <div id="waveform" class="mb-8 opacity-50 hover:opacity-80 transition-opacity mix-blend-screen"></div>
                 
                 <div class="flex justify-center">
-                    <button id="playBtn" class="bg-zinc-100 text-black px-16 py-3.5 rounded-full text-[10px] font-black hover:bg-white transition-all active:scale-95 shadow-xl uppercase tracking-[0.3em]">
+                    <button id="playBtn" class="apple-button text-black px-20 py-4 rounded-full text-[10px] font-bold transition-all uppercase tracking-[0.2em]">
                         Play / Pausa
                     </button>
                 </div>
@@ -103,8 +172,8 @@
         </div>
     </header>
 
-    <main class="flex-1 overflow-y-auto p-10 pt-16 bg-[#060606] custom-scroll">
-        <div id="timelinesContainer" class="space-y-12 pb-40 max-w-7xl mx-auto"></div>
+    <main class="flex-1 overflow-y-auto p-12 pt-16 bg-[#050505] custom-scroll">
+        <div id="timelinesContainer" class="space-y-8 pb-48 max-w-5xl mx-auto"></div>
     </main>
 
     <script>
@@ -119,29 +188,35 @@
         let focusedDepartment = null; 
         let lastActiveId = null;
 
-        // SOPORTE PARA TECLA ENTER EN LOGIN
         document.getElementById('passInput').addEventListener('keydown', (e) => {
             if (e.key === 'Enter') checkPass();
         });
 
         function checkPass() {
             const val = document.getElementById('passInput').value;
+            const errorMsg = document.getElementById('loginError');
             if(val === PASS_CORRECTA) {
                 document.getElementById('loginOverlay').style.opacity = '0';
-                setTimeout(() => document.getElementById('loginOverlay').remove(), 500);
+                setTimeout(() => document.getElementById('loginOverlay').remove(), 600);
+            } else {
+                errorMsg.classList.remove('hidden');
+                document.getElementById('passInput').value = "";
+                setTimeout(() => errorMsg.classList.add('hidden'), 2500);
             }
         }
 
         document.addEventListener('DOMContentLoaded', () => {
             wavesurfer = WaveSurfer.create({
                 container: '#waveform',
-                waveColor: '#111',
-                progressColor: '#2563eb',
-                cursorColor: '#ffffff',
-                height: 45, // WAVEFORM MÁS FINO
+                waveColor: 'rgba(255, 255, 255, 0.1)', // Onda base muy sutil
+                progressColor: 'rgba(59, 130, 246, 0.8)', // Azul Apple vibrante pero translúcido
+                cursorColor: 'rgba(255, 255, 255, 0.5)',
+                height: 40, // Aún más fino
                 barWidth: 2,
-                barGap: 3,
-                responsive: true
+                barGap: 4,
+                barRadius: 2, // Barras redondeadas
+                responsive: true,
+                normalize: true
             });
 
             wavesurfer.load(AUDIO_FILE);
@@ -186,20 +261,32 @@
             const container = document.getElementById('timelinesContainer');
             container.innerHTML = ''; 
             Array.from(uniqueDepts).sort().forEach(dept => {
+                // Contenedor de timeline más limpio, sin fondo pesado
                 const row = document.createElement('div');
-                row.className = "relative h-14 bg-zinc-900/10 rounded-2xl border border-white/5 flex items-center";
-                row.innerHTML = `<span class="absolute -top-3.5 left-6 text-[9px] uppercase font-black text-zinc-600 bg-[#060606] px-4 py-1 tracking-[0.25em] border border-zinc-900 rounded-md shadow-xl select-none">${dept}</span>`;
+                row.className = "relative h-12 flex items-center group";
                 
-                const track = document.createElement('div');
-                track.className = "w-full h-full relative mx-12";
+                // Etiqueta integrada a la izquierda, minimalista
+                row.innerHTML = `<div class="absolute left-0 w-24 text-[8px] uppercase font-bold text-zinc-600 tracking-[0.2em] text-right pr-6 select-none group-hover:text-zinc-300 transition-colors">${dept}</div>`;
+                
+                // Riel de tiempo más sutil
+                const trackWrapper = document.createElement('div');
+                trackWrapper.className = "w-full h-full ml-24 relative flex items-center";
+                
+                // Línea base del track
+                const trackLine = document.createElement('div');
+                trackLine.className = "absolute w-full h-[2px] bg-white/5 rounded-full group-hover:bg-white/10 transition-colors";
+                trackWrapper.appendChild(trackLine);
                 
                 cues.filter(c => c.Departamento === dept).forEach(cue => {
                     const dot = document.createElement('div');
                     dot.id = cue.id;
-                    dot.className = "cue-dot absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full shadow-lg";
+                    dot.className = "cue-dot absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full backdrop-blur-sm";
+                    // Usamos el color pero con transparencia para efecto joya
+                    const colorBase = cue.Color || '#555';
                     dot.style.left = `${(cue.seconds / duration) * 100}%`;
-                    dot.style.backgroundColor = cue.Color || '#333';
-                    dot.style.color = cue.Color || '#333';
+                    dot.style.backgroundColor = `${colorBase}80`; // 50% opacidad hex
+                    dot.style.borderColor = colorBase;
+                    dot.style.color = colorBase; // Para el box-shadow del foco
                     
                     dot.onclick = (e) => {
                         e.stopPropagation();
@@ -208,9 +295,9 @@
                         wavesurfer.setTime(cue.seconds);
                         updateUI(cue.seconds);
                     };
-                    track.appendChild(dot);
+                    trackWrapper.appendChild(dot);
                 });
-                row.appendChild(track);
+                row.appendChild(trackWrapper);
                 container.appendChild(row);
             });
         }
@@ -232,19 +319,19 @@
                 if (active.id !== lastActiveId) {
                     lastActiveId = active.id;
                     display.innerText = active.Texto;
-                    display.style.color = active.Color || '#fff';
-                    deptLabel.innerText = active.Departamento;
-                    deptLabel.style.borderColor = active.Color || 'rgba(255,255,255,0.05)';
-                    
+                    // Usamos el color del departamento para el pequeño punto indicador
+                    deptLabel.innerHTML = `<span class="w-1.5 h-1.5 rounded-full" style="background-color: ${active.Color || 'currentColor'}"></span> ${active.Departamento}`;
+                    deptLabel.style.color = active.Color ? `${active.Color}dd` : 'rgba(96, 165, 250, 0.8)';
+
                     display.classList.remove('text-focus');
                     void display.offsetWidth;
                     display.classList.add('text-focus');
                 }
             } else if (!active && lastActiveId !== null) {
                 lastActiveId = null;
-                display.innerText = "SISTEMA EN ESPERA";
-                display.style.color = "#1a1a1a";
-                deptLabel.innerText = "---";
+                display.innerText = "Sistema en Espera";
+                deptLabel.innerHTML = `<span class="w-1 h-1 bg-current rounded-full"></span> ---`;
+                deptLabel.style.color = "rgba(113, 113, 122, 0.8)";
             }
 
             document.querySelectorAll('.cue-dot').forEach(d => d.classList.remove('active-focus'));
@@ -254,14 +341,14 @@
             }
 
             const next = pool.filter(c => c.seconds > time).sort((a, b) => a.seconds - b.seconds)[0];
-            document.getElementById('nextCueDisplay').innerText = next ? `PRÓXIMO: ${formatTime(next.seconds)} - ${next.Texto}` : "FINAL";
+            document.getElementById('nextCueDisplay').innerText = next ? `Próximo: ${formatTime(next.seconds)} - ${next.Texto.substring(0, 30)}${next.Texto.length > 30 ? '...' : ''}` : "Fin del Track";
         }
 
         function setupFilters() {
             const select = document.getElementById('filterSelect');
             Array.from(uniqueDepts).sort().forEach(d => {
                 const opt = document.createElement('option');
-                opt.value = d; opt.innerText = d;
+                opt.value = d; opt.innerText = `Filtro: ${d}`;
                 select.appendChild(opt);
             });
         }
